@@ -68,7 +68,7 @@ function updateItemColor(itemDiv, itemName) {
     } else if (itemPhotos > item.qtd) {
         itemDiv.style.backgroundColor = "yellow";
     } else {
-        itemDiv.style.backgroundColor = "white";
+        itemDiv.style.backgroundColor = "black";
     }
 }
 
