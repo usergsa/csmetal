@@ -84,7 +84,7 @@ function updateMainListItemColor(itemName) {
     } else if (itemPhotos > item.qtd) {
         listItem.style.backgroundColor = "yellow";
     } else {
-        listItem.style.backgroundColor = "orange";
+        listItem.style.backgroundColor = "#121212";
     }
 }
 
