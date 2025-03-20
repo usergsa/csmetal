@@ -48,20 +48,25 @@ function capturePhoto(itemDiv) {
 
 // Função para abrir o modal e carregar o item
 function abrirModal(itemName) {
-    // Se o item já tiver sido capturado antes, restaure os dados
-    if (currentItemState && currentItemState.name === itemName) {
+    // Se o item ainda não tiver sido capturado, crie um novo estado
+    if (!currentItemState || currentItemState.name !== itemName) {
+        currentItemState = {
+            name: itemName,
+            photos: []  // Inicializando a lista de fotos
+        };
+
+        // Definir título e criar o conteúdo do item
+        document.getElementById("modalTitle").textContent = `Captura: ${itemName}`;
+        document.getElementById("items-list").innerHTML = "";
+        createItemElement(itemName);
+    } else {
+        // Caso contrário, apenas restaure o estado e adicione as fotos
         document.getElementById("modalTitle").textContent = `Captura: ${itemName}`;
         document.getElementById("items-list").innerHTML = "";
         createItemElement(itemName);
         currentItemState.photos.forEach(photo => {
             document.querySelector(".photos-container").appendChild(photo);
         });
-    } else {
-        // Caso contrário, crie um novo estado
-        currentItemState = {
-            name: itemName,
-            photos: []  // Inicializando a lista de fotos
-        };
     }
 
     // Exibir o modal
