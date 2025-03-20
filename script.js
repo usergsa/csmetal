@@ -1,19 +1,22 @@
-// Função para criar o elemento de item
+let romaneio = [];
+let currentItemState = null;  // Variável para armazenar o estado atual do item no modal
+
+// Função para criar o item no modal
 function createItemElement(itemName) {
     const itemDiv = document.createElement("div");
     itemDiv.classList.add("item");
-    
+
     const title = document.createElement("h3");
     title.textContent = itemName;
-    
+
     const captureBtn = document.createElement("button");
     captureBtn.textContent = "Capturar Fotos";
     captureBtn.classList.add("capture-btn");
     captureBtn.onclick = () => capturePhoto(itemDiv);
-    
+
     const photosContainer = document.createElement("div");
     photosContainer.classList.add("photos-container");
-    
+
     itemDiv.appendChild(title);
     itemDiv.appendChild(captureBtn);
     itemDiv.appendChild(photosContainer);
@@ -26,22 +29,41 @@ function capturePhoto(itemDiv) {
     const photoDiv = document.createElement("div");
     photoDiv.classList.add("photo");
     photoDiv.textContent = "Foto";
-    
+
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "×";
     deleteBtn.classList.add("delete-btn");
-    deleteBtn.onclick = () => photoDiv.remove();
-    
+    deleteBtn.onclick = () => {
+        photoDiv.remove();
+        // Atualiza o estado removendo a foto
+        currentItemState.photos = currentItemState.photos.filter(photo => photo !== photoDiv);
+    };
+
+    // Adicionando a foto ao estado
+    currentItemState.photos.push(photoDiv);
+
     photoDiv.appendChild(deleteBtn);
     photosContainer.appendChild(photoDiv);
 }
 
 // Função para abrir o modal e carregar o item
 function abrirModal(itemName) {
-    document.getElementById("modalTitle").textContent = `Captura: ${itemName}`;
-    document.getElementById("items-list").innerHTML = "";
-    createItemElement(itemName);
-    
+    // Se o item já tiver sido capturado antes, restaure os dados
+    if (currentItemState && currentItemState.name === itemName) {
+        document.getElementById("modalTitle").textContent = `Captura: ${itemName}`;
+        document.getElementById("items-list").innerHTML = "";
+        createItemElement(itemName);
+        currentItemState.photos.forEach(photo => {
+            document.querySelector(".photos-container").appendChild(photo);
+        });
+    } else {
+        // Caso contrário, crie um novo estado
+        currentItemState = {
+            name: itemName,
+            photos: []  // Inicializando a lista de fotos
+        };
+    }
+
     // Exibir o modal
     document.getElementById("modalCaptura").style.display = "flex";
 }
@@ -53,7 +75,7 @@ function exibirItens() {
     romaneio.forEach(item => {
         const li = document.createElement("li");
         li.innerHTML = `<strong>${item.material}</strong> - Quantidade: ${item.qtd}`;
-        
+
         // Abrir o modal ao clicar no item
         li.onclick = () => abrirModal(item.material);
 
@@ -61,7 +83,7 @@ function exibirItens() {
     });
 }
 
-// Fechar o modal ao clicar no "X"
+// Fechar o modal sem perder os dados
 document.querySelector(".close").onclick = function () {
     document.getElementById("modalCaptura").style.display = "none";
 };
@@ -74,8 +96,6 @@ window.onclick = function (event) {
 }
 
 // Carregar os dados ao abrir a página (exemplo)
-let romaneio = [];
-
 function carregarRomaneio() {
     fetch('https://script.google.com/macros/s/AKfycbwgfpNbszHct7ODmRP0MvfSQJ2JMK5O09pLmXXYfj01YgDV8InGCxbwWQ0sZzHt6LMrVg/exec')
         .then(response => response.json())
@@ -88,4 +108,5 @@ function carregarRomaneio() {
         .catch(error => console.error("Erro ao buscar dados:", error));
 }
 
+// Chama a função para carregar os dados ao abrir a página
 carregarRomaneio();
