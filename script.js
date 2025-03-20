@@ -120,15 +120,23 @@ window.onclick = function (event) {
 }
 
 function carregarRomaneio() {
-    fetch('https://script.google.com/macros/s/AKfycbwgfpNbsHct7ODmRP0MvfSQJ2JMK5O09pLmXXYfj01YgDV8InGCxbwWQ0sZzHt6LMrVg/exec')
-        .then(response => response.json())
+    fetch('https://script.google.com/macros/s/AKfycbwgfpNbszHct7ODmRP0MvfSQJ2JMK5O09pLmXXYfj01YgDV8InGCxbwWQ0sZzHt6LMrVg/exec')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.status === "success") {
                 romaneio = data.images;
                 exibirItens();
+            } else {
+                throw new Error("Resposta inesperada da API");
             }
         })
-        .catch(error => console.error("Erro ao buscar dados:", error));
+        .catch(error => console.error("Erro ao buscar dados:", error.message));
 }
+
 
 carregarRomaneio();
