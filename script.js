@@ -40,6 +40,9 @@ function capturePhoto(itemDiv) {
         photoDiv.remove();
         // Atualiza o estado removendo a foto
         currentItemState.photos = currentItemState.photos.filter(photo => photo !== photoDiv);
+        // Atualizar cor após exclusão
+        updateItemColor(itemDiv, currentItemState.name);
+        updateMainListItemColor(currentItemState.name);  // Atualizar cor na lista principal
     };
 
     // Adicionando a foto ao estado
@@ -50,9 +53,10 @@ function capturePhoto(itemDiv) {
 
     // Atualizar a cor do item após a captura de foto
     updateItemColor(itemDiv, currentItemState.name);
+    updateMainListItemColor(currentItemState.name);  // Atualizar cor na lista principal
 }
 
-// Função para atualizar a cor de fundo do item
+// Função para atualizar a cor de fundo do item no modal
 function updateItemColor(itemDiv, itemName) {
     const item = romaneio.find(item => item.material === itemName);
     const itemPhotos = currentItemState.photos.length;
@@ -64,6 +68,24 @@ function updateItemColor(itemDiv, itemName) {
         itemDiv.style.backgroundColor = "yellow";  // Cor amarela se houver mais fotos do que o necessário
     } else {
         itemDiv.style.backgroundColor = "white";  // Cor padrão se não tiver fotos suficientes
+    }
+}
+
+// Função para atualizar a cor de fundo do item na lista principal
+function updateMainListItemColor(itemName) {
+    const item = romaneio.find(item => item.material === itemName);
+    const itemPhotos = currentItemState.photos.length;
+    const listItem = document.querySelector(`#romaneioList li[data-material="${itemName}"]`);
+
+    if (!listItem) return; // Se o item não for encontrado na lista, sai da função
+
+    // Verificar a quantidade de fotos e a quantidade no romaneio
+    if (itemPhotos === item.qtd) {
+        listItem.style.backgroundColor = "green";  // Cor verde se as fotos forem suficientes
+    } else if (itemPhotos > item.qtd) {
+        listItem.style.backgroundColor = "yellow";  // Cor amarela se houver mais fotos do que o necessário
+    } else {
+        listItem.style.backgroundColor = "white";  // Cor padrão se não tiver fotos suficientes
     }
 }
 
@@ -100,12 +122,16 @@ function exibirItens() {
     lista.innerHTML = "";
     romaneio.forEach(item => {
         const li = document.createElement("li");
+        li.setAttribute("data-material", item.material); // Armazenar o material como atributo
         li.innerHTML = `<strong>${item.material}</strong> - Quantidade: ${item.qtd}`;
 
         // Abrir o modal ao clicar no item
         li.onclick = () => abrirModal(item.material);
 
         lista.appendChild(li);
+
+        // Inicializar a cor na lista principal
+        updateMainListItemColor(item.material);
     });
 }
 
