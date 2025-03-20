@@ -1,41 +1,95 @@
+/* Define um fundo escuro futurista */
 body {
     font-family: Arial, sans-serif;
     background-color: #121212;
     color: white;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Ocupa toda a tela */
+}
+
+/* Simula o tamanho de um celular */
+.container {
+    width: 100%;
+    max-width: 420px; /* Largura máxima de um celular */
+    height: 100vh;
+    background-color: #1e1e1e;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Título grande e centralizado */
+h1 {
+    font-size: 24px;
     text-align: center;
 }
 
-.container {
-    max-width: 600px;
-    margin: auto;
-    padding: 20px;
-}
-
-input, button {
-    margin: 10px;
-    padding: 10px;
+/* Estilo para a barra de pesquisa */
+input {
+    width: 90%;
+    padding: 12px;
     font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    outline: none;
+    background-color: #2a2a2a;
+    color: white;
 }
 
+/* Botão futurista */
 button {
-    background-color: #007fff;
+    width: 90%;
+    padding: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    background: linear-gradient(45deg, #007fff, #00c3ff);
     color: white;
     border: none;
+    border-radius: 5px;
     cursor: pointer;
+    transition: 0.3s;
 }
 
 button:hover {
-    background-color: #005bbb;
+    background: linear-gradient(45deg, #005bbb, #0099cc);
 }
 
+/* Lista de itens */
 ul {
     list-style: none;
+    width: 100%;
     padding: 0;
+    margin-top: 10px;
+    overflow-y: auto;
+    flex-grow: 1; /* Faz a lista expandir para preencher o espaço disponível */
 }
 
+/* Cada item da lista */
 li {
     background-color: #333;
-    margin: 10px 0;
+    margin: 8px 0;
     padding: 15px;
-    border-radius: 5px;
+    border-radius: 8px;
+    font-size: 18px;
+    text-align: center;
+}
+
+/* Efeito de clique no item */
+li:active {
+    background-color: #007fff;
+}
+
+/* Responsividade */
+@media (max-width: 600px) {
+    .container {
+        border-radius: 0;
+        height: 100vh;
+    }
 }
