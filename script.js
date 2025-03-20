@@ -68,7 +68,7 @@ function updateItemColor(itemDiv, itemName) {
     } else if (itemPhotos > item.qtd) {
         itemDiv.style.backgroundColor = "yellow";
     } else {
-        itemDiv.style.backgroundColor = "black";
+        itemDiv.style.backgroundColor = "#1e1e1e";
     }
 }
 
@@ -84,7 +84,7 @@ function updateMainListItemColor(itemName) {
     } else if (itemPhotos > item.qtd) {
         listItem.style.backgroundColor = "yellow";
     } else {
-        listItem.style.backgroundColor = "#121212";
+        listItem.style.backgroundColor = "#1e1e1e";
     }
 }
 
