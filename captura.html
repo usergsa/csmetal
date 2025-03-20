@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulação de Captura de Fotos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .item {
+            width: 300px;
+            padding: 15px;
+            margin: 10px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .photos-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .photo {
+            width: 80px;
+            height: 80px;
+            background-color: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            border-radius: 5px;
+            position: relative;
+        }
+        .delete-btn {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .capture-btn {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="items-list"></div>
+    <script>
+        const items = ["Item clicado la lista do romaneio"];
+
+        function createItemElement(itemName) {
+            const itemDiv = document.createElement("div");
+            itemDiv.classList.add("item");
+            
+            const title = document.createElement("h3");
+            title.textContent = itemName;
+            
+            const captureBtn = document.createElement("button");
+            captureBtn.textContent = "Capturar Fotos";
+            captureBtn.classList.add("capture-btn");
+            captureBtn.onclick = () => capturePhoto(itemDiv);
+            
+            const photosContainer = document.createElement("div");
+            photosContainer.classList.add("photos-container");
+            
+            itemDiv.appendChild(title);
+            itemDiv.appendChild(captureBtn);
+            itemDiv.appendChild(photosContainer);
+            document.getElementById("items-list").appendChild(itemDiv);
+        }
+
+        function capturePhoto(itemDiv) {
+            const photosContainer = itemDiv.querySelector(".photos-container");
+            const photoDiv = document.createElement("div");
+            photoDiv.classList.add("photo");
+            photoDiv.textContent = "Foto";
+            
+            const deleteBtn = document.createElement("button");
+            deleteBtn.textContent = "×";
+            deleteBtn.classList.add("delete-btn");
+            deleteBtn.onclick = () => photoDiv.remove();
+            
+            photoDiv.appendChild(deleteBtn);
+            photosContainer.appendChild(photoDiv);
+        }
+
+        items.forEach(createItemElement);
+    </script>
+</body>
+</html>
