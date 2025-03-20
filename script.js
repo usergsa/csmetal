@@ -18,9 +18,16 @@ function exibirItens() {
     romaneio.forEach(item => {
         const li = document.createElement("li");
         li.innerHTML = `<strong>${item.material}</strong> - Quantidade: ${item.qtd}`;
+        
+        // Adicionando evento de clique para abrir captura.html com o nome do item
+        li.onclick = () => {
+            window.location.href = `captura.html?item=${encodeURIComponent(item.material)}`;
+        };
+
         lista.appendChild(li);
     });
 }
+
 
 function filtrarItens() {
     const termo = document.getElementById("searchInput").value.toLowerCase();
