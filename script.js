@@ -19,14 +19,34 @@ function exibirItens() {
         const li = document.createElement("li");
         li.innerHTML = `<strong>${item.material}</strong> - Quantidade: ${item.qtd}`;
         
-        // Adicionando evento de clique para abrir captura.html com o nome do item
-        li.onclick = () => {
-            window.location.href = `captura.html?item=${encodeURIComponent(item.material)}`;
-        };
+        // Abrir o modal ao clicar no item
+        li.onclick = () => abrirModal(item.material);
 
         lista.appendChild(li);
     });
 }
+
+function abrirModal(itemName) {
+    document.getElementById("modalTitle").textContent = `Captura: ${itemName}`;
+    document.getElementById("items-list").innerHTML = "";
+    createItemElement(itemName);
+    
+    // Exibir o modal
+    document.getElementById("modalCaptura").style.display = "flex";
+}
+
+// Fechar o modal ao clicar no "X"
+document.querySelector(".close").onclick = function () {
+    document.getElementById("modalCaptura").style.display = "none";
+};
+
+// Fechar ao clicar fora do modal
+window.onclick = function (event) {
+    if (event.target === document.getElementById("modalCaptura")) {
+        document.getElementById("modalCaptura").style.display = "none";
+    }
+};
+
 
 
 function filtrarItens() {
