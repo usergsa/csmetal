@@ -21,6 +21,9 @@ function createItemElement(itemName) {
     itemDiv.appendChild(captureBtn);
     itemDiv.appendChild(photosContainer);
     document.getElementById("items-list").appendChild(itemDiv);
+
+    // Verificar a cor de fundo do item conforme as fotos
+    updateItemColor(itemDiv, itemName);
 }
 
 // Função para capturar foto
@@ -44,6 +47,24 @@ function capturePhoto(itemDiv) {
 
     photoDiv.appendChild(deleteBtn);
     photosContainer.appendChild(photoDiv);
+
+    // Atualizar a cor do item após a captura de foto
+    updateItemColor(itemDiv, currentItemState.name);
+}
+
+// Função para atualizar a cor de fundo do item
+function updateItemColor(itemDiv, itemName) {
+    const item = romaneio.find(item => item.material === itemName);
+    const itemPhotos = currentItemState.photos.length;
+
+    // Verificar a quantidade de fotos e a quantidade no romaneio
+    if (itemPhotos === item.qtd) {
+        itemDiv.style.backgroundColor = "green";  // Cor verde se as fotos forem suficientes
+    } else if (itemPhotos > item.qtd) {
+        itemDiv.style.backgroundColor = "yellow";  // Cor amarela se houver mais fotos do que o necessário
+    } else {
+        itemDiv.style.backgroundColor = "white";  // Cor padrão se não tiver fotos suficientes
+    }
 }
 
 // Função para abrir o modal e carregar o item
