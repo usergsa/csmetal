@@ -8,11 +8,7 @@ function createItemElement(itemName) {
     const title = document.createElement("h3");
     title.textContent = itemName;
 
-    const captureBtn = document.createElement("button");
-    captureBtn.textContent = "Capturar Fotos";
-    captureBtn.classList.add("capture-btn");
-    captureBtn.onclick = () => capturePhoto(itemName, itemDiv);
-
+    
     const photosContainer = document.createElement("div");
     photosContainer.classList.add("photos-container");
 
@@ -20,6 +16,12 @@ function createItemElement(itemName) {
     itemDiv.appendChild(captureBtn);
     itemDiv.appendChild(photosContainer);
     document.getElementById("items-list").appendChild(itemDiv);
+
+    const captureBtn = document.createElement("button");
+    captureBtn.textContent = "Capturar Fotos";
+    captureBtn.classList.add("capture-btn");
+    captureBtn.onclick = () => capturePhoto(itemName, itemDiv);
+
 
     // Recarregar fotos do item, se houver
     if (itemStates[itemName]) {
