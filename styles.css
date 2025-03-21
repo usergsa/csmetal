@@ -68,7 +68,14 @@ ul {
     padding: 0;
     margin-top: 10px;
     overflow-y: auto;
+    scrollbar-width: none; /* Para Firefox */
+    -ms-overflow-style: none; /* Para Internet Explorer e Edge */
     flex-grow: 1; /* Faz a lista expandir para preencher o espaço disponível */
+}
+
+/* Esconde a barra de rolagem para Chrome, Safari e Opera */
+ul::-webkit-scrollbar {
+    display: none;
 }
 
 /* Cada item da lista */
