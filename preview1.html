@@ -13,13 +13,12 @@
         <ul id="romaneioList"></ul>
     </div>
     <div id="modalCaptura" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="fecharModal()">&times;</span>
-            <h2 id="modalTitle">Capturar Fotos</h2>
-            <div id="items-list"></div>
-            
-        </div>
+    <div class="modal-content">
+        <span class="close" onclick="fecharModal()">&times;</span>
+        <div id="items-list"></div>
+        <h2 id="modalTitle">Capturar Fotos</h2>
     </div>
+</div>
 <style>
     .modal {
         display: none;
@@ -41,49 +40,15 @@
         max-width: 400px;
         text-align: center;
         position: relative;
-        color: #121212;
-        display: flex;
-        flex-direction: column;
     }
     .close {
         position: absolute;
         top: 10px;
         right: 15px;
-        font-size: 24px;
+        font-size: 20px;
         cursor: pointer;
-        color: #333;
-        font-weight: bold;
-    }
-    .close:hover {
-        color: #007fff;
-    }
-    #items-list {
-        margin: 15px 0;
-        max-height: 300px;
-        overflow-y: auto;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-    #items-list::-webkit-scrollbar {
-        display: none;
-    }
-    .capture-btn {
-        margin-top: 15px;
-        padding: 12px;
-        font-size: 18px;
-        font-weight: bold;
-        background: linear-gradient(45deg, #007fff, #00c3ff);
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: 0.3s;
-        width: 100%;
-    }
-    .capture-btn:hover {
-        background: linear-gradient(45deg, #005bbb, #0099cc);
     }
 </style>
-<script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
