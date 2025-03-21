@@ -5,24 +5,19 @@ function createItemElement(itemName) {
     const itemDiv = document.createElement("div");
     itemDiv.classList.add("item");
 
-    const title = document.createElement("h3");
-    title.textContent = itemName;
-
     const captureBtn = document.createElement("button");
     captureBtn.textContent = "Capturar Fotos";
     captureBtn.classList.add("capture-btn");
+    captureBtn.style.marginTop = "15px"; // Adiciona uma margem superior ao botão
     captureBtn.onclick = () => capturePhoto(itemName, itemDiv);
     
     const photosContainer = document.createElement("div");
     photosContainer.classList.add("photos-container");
 
-    itemDiv.appendChild(title);
-    itemDiv.appendChild(captureBtn);
     itemDiv.appendChild(photosContainer);
-    document.getElementById("items-list").appendChild(itemDiv);
-
+    itemDiv.appendChild(captureBtn);
     
-
+    document.getElementById("items-list").appendChild(itemDiv);
 
     // Recarregar fotos do item, se houver
     if (itemStates[itemName]) {
@@ -68,10 +63,13 @@ function updateItemColor(itemDiv, itemName) {
 
     if (itemPhotos === item.qtd) {
         itemDiv.style.backgroundColor = "green";
+        itemDiv.style.color = "white"; 
     } else if (itemPhotos > item.qtd) {
         itemDiv.style.backgroundColor = "yellow";
+        itemDiv.style.color = "black";
     } else {
         itemDiv.style.backgroundColor = "#333";
+        itemDiv.style.color = "white";
     }
 }
 
@@ -84,19 +82,28 @@ function updateMainListItemColor(itemName) {
 
     if (itemPhotos === item.qtd) {
         listItem.style.backgroundColor = "green";
+        listItem.style.color = "white";
     } else if (itemPhotos > item.qtd) {
         listItem.style.backgroundColor = "yellow";
+        listItem.style.color = "black";
     } else {
         listItem.style.backgroundColor = "#333";
+        listItem.style.color = "white";
     }
 }
 
 function abrirModal(itemName) {
-    document.getElementById("modalTitle").textContent = `Captura: ${itemName}`;
+    const item = romaneio.find(i => i.material === itemName);
+    var i=7;
+    document.getElementById("modalTitle").textContent = `${itemName} - Quantidade: ${item.qtd}`; // Exibe o nome e a quantidade do item
     document.getElementById("items-list").innerHTML = "";
+    
     createItemElement(itemName);
-
     document.getElementById("modalCaptura").style.display = "flex";
+}
+
+function fecharModal() {
+    document.getElementById("modalCaptura").style.display = "none";
 }
 
 function exibirItens() {
@@ -112,13 +119,26 @@ function exibirItens() {
     });
 }
 
-document.querySelector(".close").onclick = function () {
-    document.getElementById("modalCaptura").style.display = "none";
-};
+function filtrarItens() {
+    const input = document.getElementById('searchInput');
+    const filter = input.value.toLowerCase();
+    const ul = document.getElementById('romaneioList');
+    const li = ul.getElementsByTagName('li');
 
-window.onclick = function (event) {
-    if (event.target === document.getElementById("modalCaptura")) {
-        document.getElementById("modalCaptura").style.display = "none";
+    for (let i = 0; i < li.length; i++) {
+        const item = li[i].textContent || li[i].innerText;
+        if (item.toLowerCase().indexOf(filter) > -1) {
+            li[i].style.display = "";
+            // Highlight somente se houver texto no filtro
+            if (filter.length > 0) {
+                li[i].classList.add('highlight');
+            } else {
+                li[i].classList.remove('highlight');
+            }
+        } else {
+            li[i].style.display = "none";
+            li[i].classList.remove('highlight');
+        }
     }
 }
 
@@ -141,5 +161,14 @@ function carregarRomaneio() {
         .catch(error => console.error("Erro ao buscar dados:", error.message));
 }
 
+// Event listeners
+document.querySelector(".close").onclick = fecharModal;
 
+window.onclick = function(event) {
+    if (event.target === document.getElementById("modalCaptura")) {
+        fecharModal();
+    }
+};
+
+// Inicializar a aplicação
 carregarRomaneio();
