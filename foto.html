@@ -1,37 +1,80 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Capturar Foto</title>
+  <title>Capturar Foto com Câmera Traseira</title>
 </head>
 <body>
-  <h1>Capturar Foto com JavaScript</h1>
+  <h1>Capturar Foto com Câmera Traseira</h1>
   <video id="video" autoplay></video>
   <button id="capturar">Capturar Foto</button>
   <canvas id="canvas"></canvas>
-
   <script>
-    // Acessa a câmera do dispositivo
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(function(stream) {
-        var video = document.getElementById('video');
-        video.srcObject = stream;
-      })
-      .catch(function(error) {
-        console.error("Erro ao acessar a câmera: ", error);
-      });
+    // Função para acessar a câmera traseira
+    async function iniciarCamera() {
+      try {
+        // Obter todos os dispositivos de mídia
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        
+        // Encontrar a câmera traseira
+        const cameraTraseira = devices.find(device => 
+          device.kind === 'videoinput' && 
+          device.label.toLowerCase().includes('back') || 
+          device.label.toLowerCase().includes('rear')
+        );
 
-    // Captura a foto ao clicar no botão
-    document.getElementById('capturar').addEventListener('click', function() {
-      var canvas = document.getElementById('canvas');
-      var video = document.getElementById('video');
-      var context = canvas.getContext('2d');
+        // Configurações para captura de vídeo
+        const constraints = {
+          video: {
+            deviceId: cameraTraseira ? { exact: cameraTraseira.deviceId } : undefined,
+            facingMode: { exact: 'environment' } // Especifica câmera traseira
+          }
+        };
+
+        // Acessar a câmera
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        
+        // Configurar o elemento de vídeo
+        const video = document.getElementById('video');
+        video.srcObject = stream;
+      } catch (error) {
+        console.error("Erro ao acessar a câmera:", error);
+        
+        // Tentar acessar qualquer câmera se a traseira falhar
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          const video = document.getElementById('video');
+          video.srcObject = stream;
+        } catch (fallbackError) {
+          console.error("Erro ao acessar qualquer câmera:", fallbackError);
+          alert("Não foi possível acessar a câmera");
+        }
+      }
+    }
+
+    // Capturar foto
+    function capturarFoto() {
+      const canvas = document.getElementById('canvas');
+      const video = document.getElementById('video');
+      const context = canvas.getContext('2d');
       
       // Define a dimensão do canvas de acordo com o vídeo
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-
+      
       // Desenha a imagem do vídeo no canvas
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Opcional: Converter para base64 ou blob
+      const imagemCapturada = canvas.toDataURL('image/jpeg');
+      console.log(imagemCapturada);
+    }
+
+    // Iniciar quando o documento carregar
+    document.addEventListener('DOMContentLoaded', () => {
+      iniciarCamera();
+      
+      // Adicionar evento de clique para capturar
+      document.getElementById('capturar').addEventListener('click', capturarFoto);
     });
   </script>
 </body>
