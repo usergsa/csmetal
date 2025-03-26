@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Capturar Foto</title>
+</head>
+<body>
+  <h1>Capturar Foto com JavaScript</h1>
+  <video id="video" autoplay></video>
+  <button id="capturar">Capturar Foto</button>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    // Acessa a câmera do dispositivo
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(function(stream) {
+        var video = document.getElementById('video');
+        video.srcObject = stream;
+      })
+      .catch(function(error) {
+        console.error("Erro ao acessar a câmera: ", error);
+      });
+
+    // Captura a foto ao clicar no botão
+    document.getElementById('capturar').addEventListener('click', function() {
+      var canvas = document.getElementById('canvas');
+      var video = document.getElementById('video');
+      var context = canvas.getContext('2d');
+      
+      // Define a dimensão do canvas de acordo com o vídeo
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      // Desenha a imagem do vídeo no canvas
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    });
+  </script>
+</body>
+</html>
