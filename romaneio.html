@@ -10,7 +10,7 @@
     </style>
 </head>
 <body>
-    <h2>Carregar Excel e Enviar para Google Sheets</h2>
+    <h2>Carregar Excel para JSON</h2>
 
     <div style="margin-bottom: 10px;">
         <label>Coluna chave: 
@@ -100,7 +100,7 @@
                 return;
             }
 
-            const url = "https://script.google.com/macros/s/AKfycbxLhTG9uM49YyOBZ7vn45xM-c48T_em1zwx03EYvS2g5uLgZ05vvDlFNF0mH7f91no9/exec?nome=" + encodeURIComponent(nomePlanilha);
+            const url = "https://script.google.com/macros/s/AKfycbzhhYzYCi1amLxWENOEL2sLIbb0NPSd19XvbCOaLiRa4CdF4d-eFCzKvSQ28INF5rsA/exec?nome=" + encodeURIComponent(nomePlanilha);
 
             fetch(url, {
                 method: "POST",
