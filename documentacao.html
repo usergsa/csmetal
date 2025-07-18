@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Guia de Uso do App de Captura e Classificação</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; line-height: 1.6; background: #f5f5f5; }
+    h1, h2 { color: #2c3e50; }
+    code { background: #eee; padding: 2px 4px; border-radius: 4px; }
+    ul { padding-left: 20px; }
+  </style>
+</head>
+<body>
+
+  <h1>📱 Guia de Uso</h1>
+
+  <h2 style="margin-top:32px; background:#e3f2fd; padding:10px 16px; border-radius:8px; border-left:6px solid #1976d2;">
+    🖼️ Layout do App
+  </h2>
+  <div style="background:#fff; border-radius:12px; box-shadow:0 2px 8px #0002; padding:18px 22px; margin-bottom:24px;">
+    <ul style="list-style: disc; margin-left: 18px;">
+      <li>
+        <b>Lista Horizontal de Imagens:</b>
+        <br>
+        Na tela inicial, as imagens são exibidas em uma <span style="background:#e3f2fd; border-radius:4px; padding:2px 6px;">faixa horizontal</span> com rolagem.
+      </li>
+      <li>
+        <b>Campo de Busca:</b>
+        <br>
+        Acima da lista, há um campo de busca centralizado, ao digitar, um <span style="background:#e3f2fd; border-radius:4px; padding:2px 6px;">filtro vertical</span> é ativado.
+      </li>
+      <li>
+        <b>Filtro Vertical:</b>
+        <br>
+        O filtro exibe os itens encontrados em uma lista vertical, facilitando a navegação por código ou nome.
+      </li>
+      <li>
+        <b>Visualização em Tela Cheia:</b>
+        <br>
+        Ao tocar em uma imagem do filtro, ela é ampliada para tela cheia, permitindo edição do nome (em desenvolvimento).
+      </li>
+      
+    </ul>
+    
+
+  <h2>🔧 Pré-requisitos</h2>
+  <ul>
+    <li>Conceda permissões para câmera e galeria ao iniciar o app.</li>
+    <li>Este app funciona com captura e gerenciamento de imagens.</li>
+  </ul>
+
+  <h2>📋 Menu Inicial</h2>
+  <ul>
+    <li><b>📷 Capturar Fotos:</b> Abre a câmera e permite capturar múltiplas imagens.</li>
+    <li><b>📁 Carregar Fotos:</b> Seleciona imagens da galeria do dispositivo.</li>
+    <li><b>📄 Lista:</b> Mostra todas as fotos classificadas.</li>
+    <li><b>🗄️ Gerar Db:</b> Gera códigos em massa para identificação de itens.</li>
+    <li><b>↕️ Classificar:</b> Ordena as imagens por código.</li>
+    <li><b>📤 Upload:</b> Envia imagens para o Servidor automaticamente.</li>
+  </ul>
+
+  <h2>🔎 Pesquisa e Comandos</h2>
+  <p>Use o campo <b>Pesquisar</b> para:</p>
+  <ul>
+    <li>🔍 Buscar por código ou parte dele.</li>
+    <li><code>Cliente</code>: ativar modo para adicionar cliente.</li>
+    <li><code>Etapa</code>: ativar modo para adicionar nova etapa.</li>
+    <li><code>Upload</code>: alternar upload automático ON/OFF.</li>
+    <li><code>Cup</code>: ocultar botão de upload manual.</li>
+    <li><code>Eup</code>: exibir botão de upload manual.</li>
+    <li><code>Kit</code>: ativar modo kit para agrupar itens.</li>
+    <li><code>Ckit</code>: desativar modo kit.</li>
+    <li><code>Zbl</code>: recarregar fotos da galeria.</li>
+    <li><code>Zbdb</code>: mostrar banco de dados.</li>
+    <li><code>Cmn</code> / <code>Smn</code>: mudar visualização do menu (compacto/expandido).</li>
+    <li><code>Comp</code>: compartilhar fotos.</li>
+  </ul>
+
+  <h2>📸 Captura e Classificação</h2>
+  <ul>
+    <li>Fotos capturadas são salvas com código <code>Captura</code>.</li>
+    <li>Fotos da galeria recebem código <code>Galeria</code>.</li>
+    <li>Você pode renomear o código de uma imagem para classificá-la.</li>
+    <li>Modo <b>Kit</b> permite adicionar itens auxiliares a uma imagem.</li>
+  </ul>
+
+  <h2>☁️ Upload</h2>
+  <ul>
+    <li>Uploads automáticos ocorrem ao adicionar novas fotos.</li>
+    <li>Botão <b>UP</b> (no canto inferior direito) permite envio manual dos pendentes.</li>
+    <li>As imagens enviadas são marcadas com <code>uploaded: true</code>.</li>
+  </ul>
+
+  <h2>📊 Relatório</h2>
+  <ul>
+    <li>O botão "📄 Lista" mostra agrupamento por código com quantidades.</li>
+    <li>Toque em um código para visualizar as imagens relacionadas.</li>
+  </ul>
+
+  <h2>✅ Dicas</h2>
+  <ul>
+    <li>Use o botão <code>↕️ Classificar</code> para organizar os códigos.</li>
+    <li>Você pode excluir fotos, etapas ou dados segurando sobre os itens.</li>
+  </ul>
+
+  <p><i>Este app salva seus dados localmente e integra com o Servidor para upload.</i></p>
+
+</body>
+</html>
