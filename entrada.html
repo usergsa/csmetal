@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Excel para Google Sheets</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f4f8;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 700px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 32px 36px;
+    }
+    h2 {
+      margin-top: 0;
+      color: #1976d2;
+    }
+    label {
+      font-weight: 500;
+      color: #333;
+    }
+    input[type="text"] {
+      border: 1px solid #bdbdbd;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 15px;
+      margin-left: 4px;
+      margin-right: 8px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus {
+      border-color: #1976d2;
+    }
+    input[type="file"] {
+      margin-top: 10px;
+      margin-bottom: 18px;
+    }
+    button {
+      background: #1976d2;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 22px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-left: 10px;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #125ea7;
+    }
+    #json-output {
+      white-space: pre;
+      background: #f4f4f4;
+      padding: 18px;
+      border-radius: 8px;
+      font-size: 15px;
+      margin-top: 18px;
+      border: 1px solid #e0e0e0;
+      max-height: 350px;
+      overflow: auto;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-bottom: 12px;
+    }
+    .progress-container {
+      width: 100%;
+      background: #e3eaf2;
+      border-radius: 8px;
+      height: 12px;
+      margin: 10px 0 4px 0;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg,#1976d2 60%,#42a5f5 100%);
+      animation: progressAnim 1.2s linear infinite;
+    }
+    @keyframes progressAnim {
+      0% { width: 0%; }
+      50% { width: 80%; }
+      100% { width: 0%; }
+    }
+    @media (max-width: 600px) {
+      .container {
+        padding: 16px 6px;
+      }
+      .row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Excel para Json</h2>
+
+    <div class="row">
+      <label>Colunas selecionadas (ex: A,C):
+        <input type="text" id="col-values" value="A,B" style="width:80px;text-transform:uppercase" />
+      </label>
+    </div>
+
+    <input type="file" id="excel-file" accept=".xlsx,.xls" />
+
+    <div class="row" style="margin-top:18px;">
+      <label>Nome da planilha:
+        <input type="text" id="sheet-name" value="Página1" />
+      </label>
+      <button onclick="enviarParaAppsScript()">Converter</button>
+    </div>
+    <div id="progress-bar" style="display:none;">
+      <div class="progress-container">
+        <div class="progress-bar"></div>
+      </div>
+      <span style="color:#1976d2;font-size:15px;">Conectando...</span>
+    </div>
+
+    <h3 style="margin-top:30px;color:#1976d2;">Prévia JSON:</h3>
+    <div id="json-output"></div>
+  </div>
+
+  <script>
+    let jsonFinal = [];
+
+    function colLetterToIndex(letter) {
+      letter = letter.toUpperCase();
+      let col = 0;
+      for (let i = 0; i < letter.length; i++) {
+        col *= 26;
+        col += letter.charCodeAt(i) - 65 + 1;
+      }
+      return col - 1;
+    }
+
+    document.getElementById('excel-file').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const colValues = document.getElementById('col-values').value.trim().toUpperCase().split(',').map(s => s.trim()).filter(Boolean);
+      if (colValues.length !== 2) {
+        alert("Você deve selecionar exatamente 2 colunas.");
+        return;
+      }
+
+      const idxChave = colLetterToIndex(colValues[0]);
+      const idxValor = colLetterToIndex(colValues[1]);
+
+      const reader = new FileReader();
+      
+      reader.onload = function(e) {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const firstSheet = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheet];
+    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+
+    if (rows.length < 2) {
+        alert("Planilha vazia ou sem dados.");
+        return;
+    }
+
+    const colValues = document.getElementById('col-values').value.trim().toUpperCase().split(',').map(s => s.trim()).filter(Boolean);
+    if (colValues.length !== 2) {
+        alert("Você deve selecionar exatamente 2 colunas.");
+        return;
+    }
+
+    const idxChave = colLetterToIndex(colValues[0]);
+    const idxValor = colLetterToIndex(colValues[1]);
+
+    const titles = rows[0]; // Cabeçalhos reais da planilha
+    const extrasIdx = [...Array(titles.length).keys()].filter(i => i !== idxChave && i !== idxValor);
+
+    const header = [
+  rows[0][idxChave] || "ColunaChave",
+  rows[0][idxValor] || "ColunaValor",
+  ...extrasIdx.map(i => rows[0][i] || `Col${i+1}`)
+];
+
+    const result = [header];
+
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const chave = row[idxChave];
+        const valor = row[idxValor];
+        if (chave !== undefined && chave !== "") {
+            const extras = extrasIdx.map(i => row[i]);
+            result.push([chave, valor, ...extras]);
+        }
+    }
+
+    jsonFinal = result;
+    document.getElementById('json-output').textContent = JSON.stringify(result, null, 2);
+};
+
+      
+      reader.readAsArrayBuffer(file);
+    });
+
+    function enviarParaAppsScript() {
+      const nomePlanilha = document.getElementById('sheet-name').value.trim();
+      if (!nomePlanilha) {
+        alert("Informe o nome da planilha!");
+        return;
+      }
+
+      // Mostrar barra de progresso
+      document.getElementById('progress-bar').style.display = "block";
+
+      const url = "https://script.google.com/macros/s/AKfycbx4iY8UqmWupGTwnNNA-D2Wwuzu0qoqkSB_VGNhFvha-fC0Fk1DEcLdH3w3YT_1ZPBH/exec?nome=" + encodeURIComponent(nomePlanilha);
+      fetch(url, {
+        method: "POST",
+        body: JSON.stringify(jsonFinal),
+        headers: {
+          "Content-Type": "text/plain"
+        }
+      }).then(res => res.text())
+        .then(msg => {
+          alert("Resposta do servidor: " + msg);
+          // Limpar dados após envio
+          jsonFinal = [];
+          document.getElementById('json-output').textContent = "";
+          document.getElementById('excel-file').value = "";
+          document.getElementById('col-values').value = "A,B";
+          // Ocultar barra de progresso
+          document.getElementById('progress-bar').style.display = "none";
+        })
+        .catch(err => {
+            console.log("Erro ao enviar dados: " + err);
+            jsonFinal = [];
+            document.getElementById('json-output').textContent = "";
+            document.getElementById('excel-file').value = "";
+            document.getElementById('col-values').value = "A,B";
+            // Ocultar barra de progresso
+            document.getElementById('progress-bar').style.display = "none";
+        });
+    }
+  </script>
+</body>
+</html>
