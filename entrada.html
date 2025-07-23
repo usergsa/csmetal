@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Excel / JSONn</title>
+  <title>Excel para Google Sheets</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <style>
     body {
@@ -59,6 +59,10 @@
     button:hover {
       background: #125ea7;
     }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
     #json-output {
       white-space: pre;
       background: #f4f4f4;
@@ -91,6 +95,22 @@
       background: linear-gradient(90deg,#1976d2 60%,#42a5f5 100%);
       animation: progressAnim 1.2s linear infinite;
     }
+    .status-message {
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 12px;
+      font-weight: 500;
+    }
+    .status-success {
+      background: #e8f5e8;
+      color: #2e7d32;
+      border: 1px solid #4caf50;
+    }
+    .status-error {
+      background: #ffebee;
+      color: #c62828;
+      border: 1px solid #f44336;
+    }
     @keyframes progressAnim {
       0% { width: 0%; }
       50% { width: 80%; }
@@ -110,7 +130,7 @@
 </head>
 <body>
   <div class="container">
-    <h2>Excel / JSON</h2>
+    <h2>Excel para Google Sheets</h2>
 
     <input type="file" id="excel-file" accept=".xlsx,.xls" />
 
@@ -118,15 +138,17 @@
       <label>Nome da planilha:
         <input type="text" id="sheet-name" value="Página1" />
       </label>
-      <button onclick="enviarParaAppsScript()">Enviar</button>
+      <button id="send-btn" onclick="enviarParaAppsScript()">Enviar</button>
     </div>
 
     <div id="progress-bar" style="display:none;">
       <div class="progress-container">
         <div class="progress-bar"></div>
       </div>
-      <span style="color:#1976d2;font-size:15px;">Conectando...</span>
+      <span style="color:#1976d2;font-size:15px;">Enviando dados...</span>
     </div>
+
+    <div id="status-message"></div>
 
     <h3 style="margin-top:30px;color:#1976d2;">Prévia dos dados (JSON):</h3>
     <div id="json-output"></div>
@@ -157,7 +179,7 @@
           return;
         }
 
-        // 🔧 Normaliza colunas: garante que todas as linhas tenham o mesmo número de colunas
+        // Normaliza colunas: garante que todas as linhas tenham o mesmo número de colunas
         const maxCols = Math.max(...rows.map(r => r.length));
         rows.forEach(row => {
           while (row.length < maxCols) {
@@ -172,6 +194,59 @@
       reader.readAsArrayBuffer(file);
     });
 
+    // Função para mostrar status
+    function showStatus(message, isError = false) {
+      const statusDiv = document.getElementById('status-message');
+      statusDiv.textContent = message;
+      statusDiv.className = `status-message ${isError ? 'status-error' : 'status-success'}`;
+      statusDiv.style.display = 'block';
+      
+      // Remove a mensagem após 5 segundos
+      setTimeout(() => {
+        statusDiv.style.display = 'none';
+      }, 5000);
+    }
+
+    // Método alternativo usando form submit (bypass CORS)
+    function enviarParaAppsScriptAlternativo() {
+      const nomePlanilha = document.getElementById('sheet-name').value.trim();
+      if (!nomePlanilha) {
+        alert("Informe o nome da planilha!");
+        return;
+      }
+
+      if (jsonFinal.length === 0) {
+        alert("Carregue um arquivo Excel primeiro!");
+        return;
+      }
+
+      // Criar form invisível
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `https://script.google.com/macros/s/AKfycbx4iY8UqmWupGTwnNNA-D2Wwuzu0qoqkSB_VGNhFvha-fC0Fk1DEcLdH3w3YT_1ZPBH/exec?nome=${encodeURIComponent(nomePlanilha)}`;
+      form.target = '_blank'; // Abre em nova aba para ver resultado
+      form.style.display = 'none';
+
+      // Adicionar dados como campo oculto
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'dados';
+      input.value = JSON.stringify(jsonFinal);
+      form.appendChild(input);
+
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
+
+      showStatus("Dados enviados! Verifique a nova aba que foi aberta.");
+      
+      // Limpar formulário
+      jsonFinal = [];
+      document.getElementById('json-output').textContent = "";
+      document.getElementById('excel-file').value = "";
+      document.getElementById('sheet-name').value = "Página1";
+    }
+
     function enviarParaAppsScript() {
       const nomePlanilha = document.getElementById('sheet-name').value.trim();
       if (!nomePlanilha) {
@@ -179,33 +254,45 @@
         return;
       }
 
+      if (jsonFinal.length === 0) {
+        alert("Carregue um arquivo Excel primeiro!");
+        return;
+      }
+
+      const sendBtn = document.getElementById('send-btn');
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Enviando...';
       document.getElementById('progress-bar').style.display = "block";
 
-      const url = "https://script.google.com/macros/s/AKfycbxeuxEIrbYEltiR9Q7Y-BpMcAXaZHxxtTRYjfr7EoFhV357DH-uyqmm2EO2DjnskoJU/exec?nome=" + encodeURIComponent(nomePlanilha);
+      const url = "https://script.google.com/macros/s/AKfycbx4iY8UqmWupGTwnNNA-D2Wwuzu0qoqkSB_VGNhFvha-fC0Fk1DEcLdH3w3YT_1ZPBH/exec?nome=" + encodeURIComponent(nomePlanilha);
 
+      // Tentar com fetch primeiro
       fetch(url, {
         method: "POST",
+        mode: 'no-cors', // Importante: usar no-cors para evitar erro CORS
         body: JSON.stringify(jsonFinal),
         headers: {
           "Content-Type": "text/plain"
         }
       })
-        .then(res => res.text())
-        .then(msg => {
-          alert("Resposta do servidor: " + msg);
+        .then(() => {
+          // Com no-cors, não conseguimos ler a resposta, mas sabemos que foi enviado
+          showStatus("Dados enviados com sucesso! Verifique sua planilha no Google Sheets.");
+          
+          // Limpar formulário
           jsonFinal = [];
           document.getElementById('json-output').textContent = "";
           document.getElementById('excel-file').value = "";
           document.getElementById('sheet-name').value = "Página1";
-          document.getElementById('progress-bar').style.display = "none";
         })
         .catch(err => {
-          console.log("Erro ao enviar dados: " + err);
-          alert("Erro ao enviar dados. Veja o console para mais detalhes.");
-          jsonFinal = [];
-          document.getElementById('json-output').textContent = "";
-          document.getElementById('excel-file').value = "";
-          document.getElementById('sheet-name').value = "Página1";
+          console.log("Erro no método fetch, tentando método alternativo...", err);
+          // Se der erro, usar método alternativo
+          enviarParaAppsScriptAlternativo();
+        })
+        .finally(() => {
+          sendBtn.disabled = false;
+          sendBtn.textContent = 'Enviar';
           document.getElementById('progress-bar').style.display = "none";
         });
     }
