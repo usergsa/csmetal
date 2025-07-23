@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Excel para JSON</title>
+  <title>Excel / JSON</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <style>
     body {
@@ -110,13 +110,7 @@
 </head>
 <body>
   <div class="container">
-    <h2>Excel para Json</h2>
-
-    <div class="row">
-      <label>Colunas selecionadas (ex: A,C):
-        <input type="text" id="col-values" value="A,B" style="width:80px;text-transform:uppercase" />
-      </label>
-    </div>
+    <h2>Excel para Google Sheets</h2>
 
     <input type="file" id="excel-file" accept=".xlsx,.xls" />
 
@@ -124,8 +118,9 @@
       <label>Nome da planilha:
         <input type="text" id="sheet-name" value="Página1" />
       </label>
-      <button onclick="enviarParaAppsScript()">Converter</button>
+      <button onclick="enviarParaAppsScript()">Enviar</button>
     </div>
+
     <div id="progress-bar" style="display:none;">
       <div class="progress-container">
         <div class="progress-bar"></div>
@@ -133,85 +128,47 @@
       <span style="color:#1976d2;font-size:15px;">Conectando...</span>
     </div>
 
-    <h3 style="margin-top:30px;color:#1976d2;">Prévia JSON:</h3>
+    <h3 style="margin-top:30px;color:#1976d2;">Prévia dos dados (JSON):</h3>
     <div id="json-output"></div>
   </div>
 
   <script>
     let jsonFinal = [];
 
-    function colLetterToIndex(letter) {
-      letter = letter.toUpperCase();
-      let col = 0;
-      for (let i = 0; i < letter.length; i++) {
-        col *= 26;
-        col += letter.charCodeAt(i) - 65 + 1;
-      }
-      return col - 1;
-    }
-
     document.getElementById('excel-file').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
 
-      const colValues = document.getElementById('col-values').value.trim().toUpperCase().split(',').map(s => s.trim()).filter(Boolean);
-      if (colValues.length !== 2) {
-        alert("Você deve selecionar exatamente 2 colunas.");
-        return;
-      }
-
-      const idxChave = colLetterToIndex(colValues[0]);
-      const idxValor = colLetterToIndex(colValues[1]);
-
       const reader = new FileReader();
-      
+
       reader.onload = function(e) {
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, { type: 'array' });
-    const firstSheet = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[firstSheet];
-    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheet];
 
-    if (rows.length < 2) {
-        alert("Planilha vazia ou sem dados.");
-        return;
-    }
+        const rows = XLSX.utils.sheet_to_json(worksheet, {
+          header: 1,
+          defval: ""
+        });
 
-    const colValues = document.getElementById('col-values').value.trim().toUpperCase().split(',').map(s => s.trim()).filter(Boolean);
-    if (colValues.length !== 2) {
-        alert("Você deve selecionar exatamente 2 colunas.");
-        return;
-    }
-
-    const idxChave = colLetterToIndex(colValues[0]);
-    const idxValor = colLetterToIndex(colValues[1]);
-
-    const titles = rows[0]; // Cabeçalhos reais da planilha
-    const extrasIdx = [...Array(titles.length).keys()].filter(i => i !== idxChave && i !== idxValor);
-
-    const header = [
-  rows[0][idxChave] || "ColunaChave",
-  rows[0][idxValor] || "ColunaValor",
-  ...extrasIdx.map(i => rows[0][i] || `Col${i+1}`)
-];
-
-    const result = [header];
-
-    for (let i = 1; i < rows.length; i++) {
-        const row = rows[i];
-        const chave = row[idxChave];
-        const valor = row[idxValor];
-        if (chave !== undefined && chave !== "") {
-            const extras = extrasIdx.map(i => row[i]);
-            result.push([chave, valor, ...extras]);
+        if (rows.length === 0) {
+          alert("Arquivo vazio ou sem dados.");
+          return;
         }
-    }
 
-    jsonFinal = result;
-    document.getElementById('json-output').textContent = JSON.stringify(result, null, 2);
-};
+        // 🔧 Normaliza colunas: garante que todas as linhas tenham o mesmo número de colunas
+        const maxCols = Math.max(...rows.map(r => r.length));
+        rows.forEach(row => {
+          while (row.length < maxCols) {
+            row.push("");
+          }
+        });
 
-      
+        jsonFinal = rows;
+        document.getElementById('json-output').textContent = JSON.stringify(rows, null, 2);
+      };
+
       reader.readAsArrayBuffer(file);
     });
 
@@ -222,35 +179,34 @@
         return;
       }
 
-      // Mostrar barra de progresso
       document.getElementById('progress-bar').style.display = "block";
 
       const url = "https://script.google.com/macros/s/AKfycbx4iY8UqmWupGTwnNNA-D2Wwuzu0qoqkSB_VGNhFvha-fC0Fk1DEcLdH3w3YT_1ZPBH/exec?nome=" + encodeURIComponent(nomePlanilha);
+
       fetch(url, {
         method: "POST",
         body: JSON.stringify(jsonFinal),
         headers: {
           "Content-Type": "text/plain"
         }
-      }).then(res => res.text())
+      })
+        .then(res => res.text())
         .then(msg => {
           alert("Resposta do servidor: " + msg);
-          // Limpar dados após envio
           jsonFinal = [];
           document.getElementById('json-output').textContent = "";
           document.getElementById('excel-file').value = "";
-          document.getElementById('col-values').value = "A,B";
-          // Ocultar barra de progresso
+          document.getElementById('sheet-name').value = "Página1";
           document.getElementById('progress-bar').style.display = "none";
         })
         .catch(err => {
-            console.log("Erro ao enviar dados: " + err);
-            jsonFinal = [];
-            document.getElementById('json-output').textContent = "";
-            document.getElementById('excel-file').value = "";
-            document.getElementById('col-values').value = "A,B";
-            // Ocultar barra de progresso
-            document.getElementById('progress-bar').style.display = "none";
+          console.log("Erro ao enviar dados: " + err);
+          alert("Erro ao enviar dados. Veja o console para mais detalhes.");
+          jsonFinal = [];
+          document.getElementById('json-output').textContent = "";
+          document.getElementById('excel-file').value = "";
+          document.getElementById('sheet-name').value = "Página1";
+          document.getElementById('progress-bar').style.display = "none";
         });
     }
   </script>
