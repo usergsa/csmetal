@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Excel para Google Sheets</title>
+  <title>Excel para JSON</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <style>
     body {
@@ -130,7 +130,7 @@
 </head>
 <body>
   <div class="container">
-    <h2>Excel para Google Sheets</h2>
+    <h2>Excel/JSON</h2>
 
     <input type="file" id="excel-file" accept=".xlsx,.xls" />
 
@@ -277,7 +277,7 @@
       })
         .then(() => {
           // Com no-cors, não conseguimos ler a resposta, mas sabemos que foi enviado
-          showStatus("Dados enviados com sucesso! Verifique sua planilha no Google Sheets.");
+          showStatus("Dados enviados com sucesso!");
           
           // Limpar formulário
           jsonFinal = [];
