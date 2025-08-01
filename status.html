@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Status de Carregamento</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      padding: 20px;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .op-input {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    input {
+      width: 120px;
+      text-align: center;
+    }
+
+    button {
+      margin-left: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .loading {
+      text-align: center;
+      font-size: 18px;
+      margin: 20px;
+      color: #555;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      background: white;
+      margin-top: 20px;
+    }
+
+    table {
+      width: 100%;
+      table-layout: auto;
+      border-collapse: collapse;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 14px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      background-color: #007BFF;
+      color: white;
+      position: sticky;
+      top: 0;
+    }
+
+    tr:hover {
+      background-color: #f9f9f9;
+    }
+
+    a {
+      color: #007BFF;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Status de Carregamento</h1>
+
+  <div class="op-input">
+    <input id="inputOP" type="text" value="OP" />
+    <button onclick="carregarPlanilha()">Carregar</button>
+    <br><br>
+<button onclick="exportarParaExcel()">Exportar</button>
+
+    <br><br>
+<label>
+  <input type="checkbox" id="filtroData" checked />
+  Mostrar apenas dados de hoje ou mais recentes
+</label>
+
+  </div>
+
+  <div class="loading" id="loading">Carregando dados...</div>
+
+  <div class="table-wrapper" style="display: none;" id="tableWrapper">
+    <table id="tabela">
+      <thead id="cabecalho-tabela"></thead>
+      <tbody id="corpo-tabela"></tbody>
+    </table>
+  </div>
+
+  <script>
+async function carregarPlanilha() {
+  const op = document.getElementById("inputOP").value || "OP0";
+  const aplicarFiltro = document.getElementById("filtroData").checked;
+  const url = `https://script.google.com/macros/s/AKfycbx1_I508ehJoVcD4Bupq1o-4zRwknpiz-VgcI7BjOIx_s9WPFzbtwy9WdVT6UQfciilhw/exec?plan=${op}`;
+
+  const loading = document.getElementById("loading");
+  const wrapper = document.getElementById("tableWrapper");
+  const cabecalho = document.getElementById("cabecalho-tabela");
+  const corpo = document.getElementById("corpo-tabela");
+
+  loading.textContent = "Carregando dados...";
+  wrapper.style.display = "none";
+
+  try {
+    const response = await fetch(url);
+    const json = await response.json();
+
+    if (json.status !== "success" || !json.rows || json.rows.length === 0) {
+      throw new Error("Nenhum dado encontrado para esta OP.");
+    }
+
+    const headers = json.headers || Object.keys(json.rows[0]);
+    const possuiId = headers.includes("id");
+
+    // Desabilitar checkbox se não houver campo "id"
+    document.getElementById("filtroData").disabled = !possuiId;
+    document.getElementById("filtroData").parentElement.style.opacity = possuiId ? 1 : 0.4;
+
+    const colunasVisiveis = headers.filter(col =>
+      json.rows.some(row => row[col] && row[col].toString().trim() !== "")
+    );
+
+    const rowsComData = json.rows.map(row => {
+      let data = "";
+      if (possuiId) data = extrairDataDoId(row.id);
+      return { ...row, data };
+    });
+
+    let linhasFinal = rowsComData;
+    if (possuiId && aplicarFiltro) {
+      const hoje = new Date();
+      linhasFinal = rowsComData.filter(r => {
+        if (!r.data) return false;
+        const partes = r.data.split(/[ /:]/);
+        const d = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T${partes[3]}:${partes[4]}`);
+        return d >= new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+      });
+    }
+
+    const cabecalhos = possuiId ? ["Data", ...colunasVisiveis] : colunasVisiveis;
+    cabecalho.innerHTML = "<tr>" + cabecalhos.map(c => `<th>${c}</th>`).join("") + "</tr>";
+
+    corpo.innerHTML = "";
+    linhasFinal.forEach(row => {
+      const tds = [];
+
+      if (possuiId) tds.push(`<td>${row.data}</td>`);
+
+      colunasVisiveis.forEach(col => {
+        const val = row[col] || "";
+        if (col.toLowerCase() === "url" && val.includes("http")) {
+          tds.push(`<td><a href="${val}" target="_blank">Foto</a></td>`);
+        } else {
+          tds.push(`<td>${val}</td>`);
+        }
+      });
+
+      corpo.innerHTML += `<tr>${tds.join("")}</tr>`;
+    });
+
+    loading.style.display = "none";
+    wrapper.style.display = "block";
+
+  } catch (err) {
+    console.error(err);
+    loading.textContent = "Erro: " + err.message;
+  }
+}
+
+
+    function extrairDataDoId(id) {
+      if (!id || typeof id !== "string") return "";
+      const timestampStr = id.split("-")[0];
+      const timestamp = parseInt(timestampStr, 10);
+      if (isNaN(timestamp)) return "";
+
+      const data = new Date(timestamp);
+      const dia = String(data.getDate()).padStart(2, '0');
+      const mes = String(data.getMonth() + 1).padStart(2, '0');
+      const ano = data.getFullYear();
+      const hora = String(data.getHours()).padStart(2, '0');
+      const min = String(data.getMinutes()).padStart(2, '0');
+      return `${dia}/${mes}/${ano} ${hora}:${min}`;
+    }
+
+    function exportarParaExcel() {
+  const tabela = document.getElementById("tabela");
+  if (!tabela || tabela.rows.length === 0) {
+    alert("Nenhuma tabela para exportar.");
+    return;
+  }
+
+  const nomeArquivo = `status_${new Date().toISOString().slice(0,10)}.xls`;
+
+  const html = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office"
+          xmlns:x="urn:schemas-microsoft-com:office:excel"
+          xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta charset="UTF-8">
+      <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+      <x:Name>Status</x:Name>
+      <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+      </x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+    </head>
+    <body>
+      ${tabela.outerHTML}
+    </body>
+    </html>`;
+
+  const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = nomeArquivo;
+  link.click();
+}
+
+    // Carrega ao abrir a página
+    window.onload = () => carregarPlanilha();
+  </script>
+</body>
+</html>
