@@ -132,7 +132,8 @@
   <div class="container">
     <h2>Excel/JSON</h2>
 
-    <input type="file" id="excel-file" accept=".xlsx,.xls" />
+    <input type="file" id="excel-file" accept=".xlsx,.xls" multiple />
+
 
     <div class="row" style="margin-top:18px;">
       <label>Nome da planilha:
@@ -157,43 +158,66 @@
   <script>
     let jsonFinal = [];
 
-    document.getElementById('excel-file').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
+    document.getElementById('excel-file').addEventListener('change', async function (e) {
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
 
-      const reader = new FileReader();
+  const allData = [];
+  let baseHeader = null;
+  let headersMatch = true;
 
-      reader.onload = function(e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheet = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheet];
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type: 'array' });
+    const firstSheet = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheet];
 
-        const rows = XLSX.utils.sheet_to_json(worksheet, {
-          header: 1,
-          defval: ""
-        });
-
-        if (rows.length === 0) {
-          alert("Arquivo vazio ou sem dados.");
-          return;
-        }
-
-        // Normaliza colunas: garante que todas as linhas tenham o mesmo número de colunas
-        const maxCols = Math.max(...rows.map(r => r.length));
-        rows.forEach(row => {
-          while (row.length < maxCols) {
-            row.push("");
-          }
-        });
-
-        jsonFinal = rows;
-        document.getElementById('json-output').textContent = JSON.stringify(rows, null, 2);
-      };
-
-      reader.readAsArrayBuffer(file);
+    const rows = XLSX.utils.sheet_to_json(worksheet, {
+      header: 1,
+      defval: ""
     });
 
+    if (rows.length === 0) {
+      alert(`Arquivo "${file.name}" está vazio.`);
+      return;
+    }
+
+    // Normaliza número de colunas por linha
+    const maxCols = Math.max(...rows.map(r => r.length));
+    rows.forEach(row => {
+      while (row.length < maxCols) row.push("");
+    });
+
+    const [header, ...conteudo] = rows;
+
+    if (!baseHeader) {
+      baseHeader = header;
+    } else {
+      const isSame = JSON.stringify(header) === JSON.stringify(baseHeader);
+      if (!isSame) {
+        headersMatch = false;
+        alert(`O arquivo "${file.name}" possui cabeçalhos diferentes. Ignorado.`);
+        continue; // pula arquivo incompatível
+      }
+    }
+
+    allData.push(...conteudo);
+  }
+
+  if (!baseHeader) {
+    alert("Nenhum arquivo com estrutura válida.");
+    return;
+  }
+
+  // Reconstroi o JSON final: cabeçalho + linhas combinadas
+  const finalData = [baseHeader, ...allData];
+  jsonFinal = finalData;
+
+  document.getElementById('json-output').textContent = JSON.stringify(finalData, null, 2);
+});
+
+    
     // Função para mostrar status
     function showStatus(message, isError = false) {
       const statusDiv = document.getElementById('status-message');
@@ -223,7 +247,7 @@
       // Criar form invisível
       const form = document.createElement('form');
       form.method = 'POST';
-      form.action = `https://script.google.com/macros/s/AKfycbx4iY8UqmWupGTwnNNA-D2Wwuzu0qoqkSB_VGNhFvha-fC0Fk1DEcLdH3w3YT_1ZPBH/exec?nome=${encodeURIComponent(nomePlanilha)}`;
+      form.action = `https://script.google.com/macros/s/AKfycby3_IBNPYVnaHE691KCB3wUZ5Fmk77tb-IiMCn--hViwgTV9sLuG1AdXe2bTu47Qs0/exec?nome=${encodeURIComponent(nomePlanilha)}`;
       form.target = '_blank'; // Abre em nova aba para ver resultado
       form.style.display = 'none';
 
