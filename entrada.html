@@ -479,7 +479,7 @@ function fecharModal() {
         document.getElementById('tab-status').classList.add('active');
         document.getElementById('tabStatusBtn').classList.add('active');
         const nomePlanilha = document.getElementById('sheet-name').value.trim()+'STATUS' || 'OPhSTATUS';
-        document.getElementById('iframe-status').src = "vlist.html?plan=" + encodeURIComponent(nomePlanilha);
+        document.getElementById('iframe-status').src = "status.html?plan=" + encodeURIComponent(nomePlanilha);
       } else if (tab === 'analise') {
         document.getElementById('tab-analise').classList.add('active');
         document.getElementById('tabAnaliseBtn').classList.add('active');
