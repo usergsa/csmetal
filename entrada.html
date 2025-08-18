@@ -2,77 +2,126 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Excel para JSON</title>
+  <title>Colletor versao beta</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
-      background: #f0f4f8;
+      background: linear-gradient(120deg,#e3eaf2 60%,#f0f4f8 100%);
       margin: 0;
       padding: 0;
     }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 18px;
+      gap: 8px;
+    }
+    .tab-btn {
+      background: #e3eaf2;
+      border: none;
+      border-radius: 10px 10px 0 0;
+      padding: 12px 38px;
+      font-size: 17px;
+      font-weight: 500;
+      cursor: pointer;
+      color: #1976d2;
+      transition: background 0.2s, color 0.2s;
+      outline: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      letter-spacing: 0.5px;
+    }
+    .tab-btn.active {
+      background: #fff;
+      color: #1976d2;
+      border-bottom: 3px solid #1976d2;
+      font-weight: bold;
+      box-shadow: 0 4px 16px rgba(25,118,210,0.08);
+    }
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.3s;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
     .container {
-      max-width: 700px;
+      max-width: 750px;
       margin: 40px auto;
       background: #fff;
-      border-radius: 14px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-      padding: 32px 36px;
+      border-radius: 18px;
+      box-shadow: 0 6px 32px rgba(25,118,210,0.08);
+      padding: 38px 42px;
+      border: 1px solid #e3eaf2;
     }
     h2 {
       margin-top: 0;
       color: #1976d2;
+      font-size: 2rem;
+      letter-spacing: 1px;
     }
     label {
       font-weight: 500;
       color: #333;
     }
     input[type="text"] {
-      border: 1px solid #bdbdbd;
-      border-radius: 6px;
-      padding: 6px 10px;
-      font-size: 15px;
+      border: 1.5px solid #bdbdbd;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 16px;
       margin-left: 4px;
       margin-right: 8px;
       outline: none;
       transition: border-color 0.2s;
+      background: #f7fafd;
     }
     input[type="text"]:focus {
       border-color: #1976d2;
+      background: #e3eaf2;
     }
     input[type="file"] {
       margin-top: 10px;
       margin-bottom: 18px;
+      font-size: 15px;
     }
     button {
-      background: #1976d2;
+      background: linear-gradient(90deg,#1976d2 60%,#42a5f5 100%);
       color: #fff;
       border: none;
-      border-radius: 6px;
-      padding: 8px 22px;
+      border-radius: 8px;
+      padding: 10px 28px;
       font-size: 16px;
       font-weight: 500;
       cursor: pointer;
       margin-left: 10px;
-      transition: background 0.2s;
+      transition: background 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 8px rgba(25,118,210,0.08);
+      letter-spacing: 0.5px;
     }
     button:hover {
-      background: #125ea7;
+      background: linear-gradient(90deg,#125ea7 60%,#1976d2 100%);
+      box-shadow: 0 4px 16px rgba(25,118,210,0.12);
     }
     button:disabled {
       background: #ccc;
       cursor: not-allowed;
+      box-shadow: none;
     }
     #json-output {
       white-space: pre;
       background: #f4f4f4;
       padding: 18px;
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 15px;
       margin-top: 18px;
       border: 1px solid #e0e0e0;
       max-height: 350px;
       overflow: auto;
+      box-shadow: 0 2px 8px rgba(25,118,210,0.04);
     }
     .row {
       display: flex;
@@ -97,9 +146,11 @@
     }
     .status-message {
       padding: 12px;
-      border-radius: 6px;
+      border-radius: 8px;
       margin-top: 12px;
       font-weight: 500;
+      font-size: 15px;
+      box-shadow: 0 2px 8px rgba(25,118,210,0.04);
     }
     .status-success {
       background: #e8f5e8;
@@ -110,6 +161,27 @@
       background: #ffebee;
       color: #c62828;
       border: 1px solid #f44336;
+    }
+    .iframe-status {
+      width: 100%;
+      min-height: 650px;
+      border: none;
+      border-radius: 0 0 12px 12px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(25,118,210,0.04);
+      margin-bottom: 24px;
+    }
+    .dev-msg {
+      background: #fffbe6;
+      color: #b59f3b;
+      border: 1.5px solid #ffe082;
+      border-radius: 10px;
+      padding: 32px;
+      text-align: center;
+      font-size: 1.2rem;
+      margin: 40px auto;
+      max-width: 600px;
+      box-shadow: 0 2px 8px rgba(255,193,7,0.08);
     }
     @keyframes progressAnim {
       0% { width: 0%; }
@@ -125,35 +197,104 @@
         align-items: flex-start;
         gap: 8px;
       }
+      .tab-btn {
+        padding: 10px 10px;
+        font-size: 15px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Excel/JSON</h2>
-
-    <input type="file" id="excel-file" accept=".xlsx,.xls" multiple />
-
-
-    <div class="row" style="margin-top:18px;">
-      <label>Nome da planilha:
-        <input type="text" id="sheet-name" value="Página1" />
-      </label>
-      <button id="send-btn" onclick="enviarParaAppsScript()">Enviar</button>
-    </div>
-
-    <div id="progress-bar" style="display:none;">
-      <div class="progress-container">
-        <div class="progress-bar"></div>
-      </div>
-      <span style="color:#1976d2;font-size:15px;">Enviando dados...</span>
-    </div>
-
-    <div id="status-message"></div>
-
-    <h3 style="margin-top:30px;color:#1976d2;">Prévia dos dados (JSON):</h3>
-    <div id="json-output"></div>
+  <div class="tabs">
+    <button class="tab-btn active" id="tabEntradaBtn" onclick="abrirTab('entrada')">Entrada</button>
+    <button class="tab-btn" id="tabStatusBtn" onclick="abrirTab('status')">Status</button>
+    <button class="tab-btn" id="tabAnaliseBtn" onclick="abrirTab('analise')">Análise &amp; Desempenho</button>
+    <button class="tab-btn" id="tabDocBtn" onclick="abrirTab('doc')">Documentação</button>
   </div>
+
+  <div id="tab-entrada" class="tab-content active">
+    <div class="container">
+      <h2>Excel/JSON</h2>
+
+      <input type="file" id="excel-file" accept=".xlsx,.xls" multiple />
+
+
+      <div class="row" style="margin-top:18px;">
+        <label>Nome do cliente:
+          <input type="text" id="sheet-name" value="OP26" />
+        </label>
+        <button id="send-btn" onclick="enviarParaAppsScript()">Enviar</button>
+      </div>
+
+      <div id="progress-bar" style="display:none;">
+        <div class="progress-container">
+          <div class="progress-bar"></div>
+        </div>
+        <span style="color:#1976d2;font-size:15px;">Enviando dados...</span>
+      </div>
+
+      <div id="status-message"></div>
+
+      <h3 style="margin-top:30px;color:#1976d2;">Prévia dos dados (JSON):</h3>
+      <div id="json-output"></div>
+    </div>
+  </div>
+  <div id="tab-status" class="tab-content">
+    <iframe id="iframe-status" class="iframe-status"></iframe>
+  </div>
+  <div id="tab-analise" class="tab-content">
+    <div class="dev-msg">
+      <b>🔧 Em desenvolvimento</b><br>
+      Em breve você poderá visualizar gráficos, estatísticas e desempenho dos dados da planilha.
+    </div>
+  </div>
+  <div id="tab-doc" class="tab-content">
+    <div class="dev-msg">
+      <b>📚 Em desenvolvimento</b><br>
+      Aqui ficará a documentação do sistema, exemplos de uso e instruções detalhadas.
+    </div>
+  </div>
+
+  <!-- Modal -->
+<div id="modal-html" style="
+  display:none;
+  position:fixed;
+  top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,0.5);
+  justify-content:center;
+  align-items:center;
+  z-index:1000;
+">
+  <div style="
+    background:#fff;
+    width:90%;
+    max-width:800px;
+    height:90%;
+    border-radius:8px;
+    overflow:hidden;
+    box-shadow:0 4px 12px rgba(0,0,0,0.2);
+    position:relative;
+  ">
+    <button onclick="fecharModal()" style="
+      position:absolute; top:10px; right:10px;
+      background:#f44336; color:white;
+      border:none; border-radius:4px; padding:4px 8px; cursor:pointer;
+    ">X</button>
+    <iframe id="iframe-modal" src="" style="width:100%; height:100%; border:none;"></iframe>
+  </div>
+</div>
+
+<script>
+function abrirModalComHTML(url) {
+  document.getElementById('iframe-modal').src = url;
+  document.getElementById('modal-html').style.display = 'flex';
+}
+
+function fecharModal() {
+  document.getElementById('modal-html').style.display = 'none';
+}
+</script>
+
 
   <script>
     let jsonFinal = [];
@@ -268,7 +409,7 @@
       jsonFinal = [];
       document.getElementById('json-output').textContent = "";
       document.getElementById('excel-file').value = "";
-      document.getElementById('sheet-name').value = "Página1";
+      document.getElementById('sheet-name').value = "OP26";
     }
 
     function enviarParaAppsScript() {
@@ -277,11 +418,11 @@
         alert("Informe o nome da planilha!");
         return;
       }
-
       if (jsonFinal.length === 0) {
         alert("Carregue um arquivo Excel primeiro!");
         return;
       }
+      abrirModalComHTML("vlist.html?plan=" + encodeURIComponent(nomePlanilha+'STATUS'));
 
       const sendBtn = document.getElementById('send-btn');
       sendBtn.disabled = true;
@@ -307,7 +448,7 @@
           jsonFinal = [];
           document.getElementById('json-output').textContent = "";
           document.getElementById('excel-file').value = "";
-          document.getElementById('sheet-name').value = "Página1";
+          document.getElementById('sheet-name').value = "OP26";
         })
         .catch(err => {
           console.log("Erro no método fetch, tentando método alternativo...", err);
@@ -319,6 +460,33 @@
           sendBtn.textContent = 'Enviar';
           document.getElementById('progress-bar').style.display = "none";
         });
+    }
+
+    // Tabs logic
+    function abrirTab(tab) {
+      document.getElementById('tab-entrada').classList.remove('active');
+      document.getElementById('tab-status').classList.remove('active');
+      document.getElementById('tab-analise').classList.remove('active');
+      document.getElementById('tab-doc').classList.remove('active');
+      document.getElementById('tabEntradaBtn').classList.remove('active');
+      document.getElementById('tabStatusBtn').classList.remove('active');
+      document.getElementById('tabAnaliseBtn').classList.remove('active');
+      document.getElementById('tabDocBtn').classList.remove('active');
+      if (tab === 'entrada') {
+        document.getElementById('tab-entrada').classList.add('active');
+        document.getElementById('tabEntradaBtn').classList.add('active');
+      } else if (tab === 'status') {
+        document.getElementById('tab-status').classList.add('active');
+        document.getElementById('tabStatusBtn').classList.add('active');
+        const nomePlanilha = document.getElementById('sheet-name').value.trim()+'STATUS' || 'OPhSTATUS';
+        document.getElementById('iframe-status').src = "vlist.html?plan=" + encodeURIComponent(nomePlanilha);
+      } else if (tab === 'analise') {
+        document.getElementById('tab-analise').classList.add('active');
+        document.getElementById('tabAnaliseBtn').classList.add('active');
+      } else if (tab === 'doc') {
+        document.getElementById('tab-doc').classList.add('active');
+        document.getElementById('tabDocBtn').classList.add('active');
+      }
     }
   </script>
 </body>
