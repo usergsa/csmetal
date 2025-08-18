@@ -1,258 +1,264 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <title>Status de Carregamento</title>
+  <title>FlatList - Planilha Dinâmica</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f0f2f5;
-      padding: 20px;
-      color: #333;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(120deg,#e3eaf2 60%,#f0f4f8 100%);
+      margin: 0;
+      padding: 24px;
     }
-
-    h1 {
+    .controls {
       text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 18px;
     }
-
-    .op-input {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    input, button {
-      padding: 10px;
-      font-size: 16px;
+    .controls input, .controls button {
+      padding: 8px;
+      font-size: 15px;
       border-radius: 8px;
-      border: 1px solid #ccc;
+      border: 1.5px solid #bdbdbd;
+      margin-right: 8px;
+      background: #f7fafd;
+      transition: border-color 0.2s;
     }
-
-    input {
-      width: 120px;
-      text-align: center;
+    .controls input:focus {
+      border-color: #1976d2;
+      background: #e3eaf2;
     }
-
-    button {
-      margin-left: 10px;
-      background-color: #007bff;
-      color: white;
+    .controls button {
+      background: linear-gradient(90deg,#1976d2 60%,#42a5f5 100%);
+      color: #fff;
       border: none;
+      font-weight: 500;
       cursor: pointer;
+      box-shadow: 0 2px 8px rgba(25,118,210,0.08);
+      transition: background 0.2s, box-shadow 0.2s;
     }
-
-    button:hover {
-      background-color: #0056b3;
+    .controls button:hover {
+      background: linear-gradient(90deg,#125ea7 60%,#1976d2 100%);
+      box-shadow: 0 4px 16px rgba(25,118,210,0.12);
     }
-
-    .loading {
-      text-align: center;
-      font-size: 18px;
-      margin: 20px;
-      color: #555;
-    }
-
-    .table-wrapper {
-      overflow-x: auto;
+    .list-container {
+      max-width: 98%;
+      margin: 0 auto;
+      border: 1.5px solid #e3eaf2;
       border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      background: white;
-      margin-top: 20px;
+      background: #fff;
+      max-height: 75vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 24px rgba(25,118,210,0.08);
     }
-
     table {
       width: 100%;
-      table-layout: auto;
       border-collapse: collapse;
-      border-radius: 12px;
-      overflow: hidden;
+      font-size: 15px;
     }
-
+    thead {
+      background: #1976d2;
+      color: #fff;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      font-size: 16px;
+      letter-spacing: 0.5px;
+    }
     th, td {
-      padding: 14px;
+      padding: 10px 14px;
       border-bottom: 1px solid #eee;
       text-align: left;
       white-space: nowrap;
     }
-
-    th {
-      background-color: #007BFF;
-      color: white;
-      position: sticky;
-      top: 0;
+    tr:nth-child(even) {
+      background: #f9f9f9;
     }
-
-    tr:hover {
-      background-color: #f9f9f9;
+    tr:hover td {
+      background: #e3eaf2;
+      transition: background 0.2s;
     }
-
-    a {
-      color: #007BFF;
-      text-decoration: none;
+    .status {
+      text-align: center;
+      margin: 12px;
+      font-size: 15px;
+      color: #555;
+      background: #f7fafd;
+      border-radius: 8px;
+      padding: 8px;
+      box-shadow: 0 2px 8px rgba(25,118,210,0.04);
     }
-
-    a:hover {
-      text-decoration: underline;
+    @media (max-width: 600px) {
+      .list-container {
+        max-width: 100%;
+        border-radius: 6px;
+        padding: 0;
+      }
+      th, td {
+        padding: 7px 6px;
+        font-size: 13px;
+      }
     }
   </style>
 </head>
 <body>
-
-  <h1>Status de Carregamento</h1>
-
-  <div class="op-input">
-    <input id="inputOP" type="text" value="OP" />
-    <button onclick="carregarPlanilha()">Carregar</button>
-    <br><br>
-<button onclick="exportarParaExcel()">Exportar</button>
-
-    <br><br>
-<label>
-  <input type="checkbox" id="filtroData" checked />
-  Mostrar apenas dados de hoje ou mais recentes
-</label>
-
+  <div class="controls">
+    <input type="text" id="nomePlanilhaInput" placeholder="Nome da planilha" style="width:200px;">
+    <button onclick="onCarregarClick()">Carregar</button>
+    <button onclick="exportarExcel()">📤 Exportar Excel</button>
   </div>
 
-  <div class="loading" id="loading">Carregando dados...</div>
-
-  <div class="table-wrapper" style="display: none;" id="tableWrapper">
-    <table id="tabela">
-      <thead id="cabecalho-tabela"></thead>
-      <tbody id="corpo-tabela"></tbody>
+  <div class="list-container">
+    <table>
+      <thead id="flatListHeader"></thead>
+      <tbody id="flatList"></tbody>
     </table>
   </div>
 
+  <div class="status" id="statusMsg">⏸️ Monitor parado</div>
+
   <script>
-async function carregarPlanilha() {
-  const op = document.getElementById("inputOP").value || "OP0";
-  const aplicarFiltro = document.getElementById("filtroData").checked;
-  const url = `https://script.google.com/macros/s/AKfycbx1_I508ehJoVcD4Bupq1o-4zRwknpiz-VgcI7BjOIx_s9WPFzbtwy9WdVT6UQfciilhw/exec?plan=${op}`;
+    let ultimaLista = [];
+    let headersAtuais = [];
+    let monitorInterval = null;
+    let planilhaAtual = null;
 
-  const loading = document.getElementById("loading");
-  const wrapper = document.getElementById("tableWrapper");
-  const cabecalho = document.getElementById("cabecalho-tabela");
-  const corpo = document.getElementById("corpo-tabela");
+    // ordem fixa
+    const ordemCabecalhos = ["data", "marca", "qtdp", "id", "cliente", "lastro", "pendente"];
 
-  loading.textContent = "Carregando dados...";
-  wrapper.style.display = "none";
-
-  try {
-    const response = await fetch(url);
-    const json = await response.json();
-
-    if (json.status !== "success" || !json.rows || json.rows.length === 0) {
-      throw new Error("Nenhum dado encontrado para esta OP.");
+    async function carregarPlanilha(nomePlanilha) {
+      if (!nomePlanilha) return null;
+      const url = `https://script.google.com/macros/s/AKfycbx1_I508ehJoVcD4Bupq1o-4zRwknpiz-VgcI7BjOIx_s9WPFzbtwy9WdVT6UQfciilhw/exec?plan=${encodeURIComponent(nomePlanilha)}`;
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const dados = await response.json();
+        if (dados.status !== "success" || !Array.isArray(dados.rows)) throw new Error("Resposta inválida da API");
+        return dados;
+      } catch {
+        return null; // retorna null em caso de erro
+      }
     }
 
-    const headers = json.headers || Object.keys(json.rows[0]);
-    const possuiId = headers.includes("id");
-
-    // Desabilitar checkbox se não houver campo "id"
-    document.getElementById("filtroData").disabled = !possuiId;
-    document.getElementById("filtroData").parentElement.style.opacity = possuiId ? 1 : 0.4;
-
-    const colunasVisiveis = headers.filter(col =>
-      json.rows.some(row => row[col] && row[col].toString().trim() !== "")
-    );
-
-    const rowsComData = json.rows.map(row => {
-      let data = "";
-      if (possuiId) data = extrairDataDoId(row.id);
-      return { ...row, data };
-    });
-
-    let linhasFinal = rowsComData;
-    if (possuiId && aplicarFiltro) {
-      const hoje = new Date();
-      linhasFinal = rowsComData.filter(r => {
-        if (!r.data) return false;
-        const partes = r.data.split(/[ /:]/);
-        const d = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T${partes[3]}:${partes[4]}`);
-        return d >= new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    function extrairDados(rows, headers) {
+      if (!Array.isArray(rows) || !headers?.length) return [];
+      return rows.map(item => {
+        if (typeof item === 'object' && !Array.isArray(item)) return item;
+        const obj = {};
+        headers.forEach((h, i) => { if (h) obj[h] = item[i]; });
+        return obj;
       });
     }
 
-    const cabecalhos = possuiId ? ["Data", ...colunasVisiveis] : colunasVisiveis;
-    cabecalho.innerHTML = "<tr>" + cabecalhos.map(c => `<th>${c}</th>`).join("") + "</tr>";
+    function formatarData(dt) {
+      if (!dt) return "";
+      const d = new Date(dt);
+      if (isNaN(d.getTime())) return dt;
+      return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    }
 
-    corpo.innerHTML = "";
-    linhasFinal.forEach(row => {
-      const tds = [];
+    function renderHeader() {
+      const thead = document.getElementById('flatListHeader');
+      thead.innerHTML = `<tr>${ordemCabecalhos.map(h => `<th>${h}</th>`).join('')}</tr>`;
+      headersAtuais = ordemCabecalhos;
+    }
 
-      if (possuiId) tds.push(`<td>${row.data}</td>`);
+    function renderItem(item) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = ordemCabecalhos.map(h => {
+        let val = item[h] ?? '';
+        if (h === "data") val = formatarData(val);
+        return `<td>${val}</td>`;
+      }).join('');
+      return tr;
+    }
 
-      colunasVisiveis.forEach(col => {
-        const val = row[col] || "";
-        if (col.toLowerCase() === "url" && val.includes("http")) {
-          tds.push(`<td><a href="${val}" target="_blank">Foto</a></td>`);
-        } else {
-          tds.push(`<td>${val}</td>`);
+    function FlatList({ data }) {
+      const tbody = document.getElementById('flatList');
+      tbody.innerHTML = '';
+      renderHeader();
+      if (!data.length) {
+        tbody.innerHTML = `<tr><td colspan="${ordemCabecalhos.length}" style="text-align:center;color:#666">⏳ Aguardando status...</td></tr>`;
+        return;
+      }
+      data.forEach(item => tbody.appendChild(renderItem(item)));
+    }
+
+    async function exibirPlanilha(nomePlanilha) {
+      const resultado = await carregarPlanilha(nomePlanilha);
+      if (!resultado) {
+        ultimaLista = [];
+        FlatList({ data: [] });
+        return;
+      }
+      const lista = extrairDados(resultado.rows, resultado.headers || []);
+      ultimaLista = lista;
+      FlatList({ data: lista });
+    }
+
+    function iniciarMonitor(nomePlanilha) {
+      if (monitorInterval) clearInterval(monitorInterval);
+      monitorInterval = setInterval(async () => {
+        const resultado = await carregarPlanilha(nomePlanilha);
+        if (!resultado) {
+          ultimaLista = [];
+          FlatList({ data: [] });
+          return;
         }
-      });
-
-      corpo.innerHTML += `<tr>${tds.join("")}</tr>`;
-    });
-
-    loading.style.display = "none";
-    wrapper.style.display = "block";
-
-  } catch (err) {
-    console.error(err);
-    loading.textContent = "Erro: " + err.message;
-  }
-}
-
-
-    function extrairDataDoId(id) {
-      if (!id || typeof id !== "string") return "";
-      const timestampStr = id.split("-")[0];
-      const timestamp = parseInt(timestampStr, 10);
-      if (isNaN(timestamp)) return "";
-
-      const data = new Date(timestamp);
-      const dia = String(data.getDate()).padStart(2, '0');
-      const mes = String(data.getMonth() + 1).padStart(2, '0');
-      const ano = data.getFullYear();
-      const hora = String(data.getHours()).padStart(2, '0');
-      const min = String(data.getMinutes()).padStart(2, '0');
-      return `${dia}/${mes}/${ano} ${hora}:${min}`;
+        const novaLista = extrairDados(resultado.rows, resultado.headers || []);
+        if (JSON.stringify(novaLista) !== JSON.stringify(ultimaLista)) {
+          ultimaLista = novaLista;
+          FlatList({ data: novaLista });
+          document.getElementById('statusMsg').textContent = `✅ Atualizado em ${new Date().toLocaleTimeString()}`;
+        } else {
+          document.getElementById('statusMsg').textContent = `⏳ Nenhuma mudança (${new Date().toLocaleTimeString()})`;
+        }
+      }, 5000);
+      document.getElementById('statusMsg').textContent = "▶️ Monitor ativo";
     }
 
-    function exportarParaExcel() {
-  const tabela = document.getElementById("tabela");
-  if (!tabela || tabela.rows.length === 0) {
-    alert("Nenhuma tabela para exportar.");
-    return;
-  }
+    function onCarregarClick() {
+      const nomePlanilha = document.getElementById('nomePlanilhaInput').value.trim();
+      if (!nomePlanilha) return;
+      planilhaAtual = nomePlanilha;
+      exibirPlanilha(planilhaAtual);
+      iniciarMonitor(planilhaAtual);
+    }
 
-  const nomeArquivo = `status_${new Date().toISOString().slice(0,10)}.xls`;
+    function exportarExcel() {
+      if (!ultimaLista.length || !headersAtuais.length) {
+        alert("Nenhum dado para exportar.");
+        return;
+      }
+      const wsData = [headersAtuais];
+      ultimaLista.forEach(row => {
+        const linha = headersAtuais.map(h => {
+          if (h === "data") return formatarData(row[h]);
+          return row[h] ?? "";
+        });
+        wsData.push(linha);
+      });
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Dados");
+      XLSX.writeFile(wb, `planilha_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
 
-  const html = `
-    <html xmlns:o="urn:schemas-microsoft-com:office:office"
-          xmlns:x="urn:schemas-microsoft-com:office:excel"
-          xmlns="http://www.w3.org/TR/REC-html40">
-    <head>
-      <meta charset="UTF-8">
-      <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
-      <x:Name>Status</x:Name>
-      <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
-      </x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
-    </head>
-    <body>
-      ${tabela.outerHTML}
-    </body>
-    </html>`;
+    // Função utilitária para pegar parâmetro da URL
+    function getQueryParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
 
-  const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = nomeArquivo;
-  link.click();
-}
-
-    // Carrega ao abrir a página
-    window.onload = () => carregarPlanilha();
+    // Chama automaticamente se houver parâmetro ?plan=...
+    window.addEventListener('DOMContentLoaded', () => {
+      const plan = getQueryParam('plan');
+      if (plan) {
+        document.getElementById('nomePlanilhaInput').value = plan;
+        exibirPlanilha(plan);
+        iniciarMonitor(plan);
+      }
+    });
   </script>
 </body>
 </html>
