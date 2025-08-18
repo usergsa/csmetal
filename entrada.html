@@ -422,7 +422,7 @@ function fecharModal() {
         alert("Carregue um arquivo Excel primeiro!");
         return;
       }
-      abrirModalComHTML("vlist.html?plan=" + encodeURIComponent(nomePlanilha+'STATUS'));
+      abrirModalComHTML("status.html?plan=" + encodeURIComponent(nomePlanilha+'STATUS'));
 
       const sendBtn = document.getElementById('send-btn');
       sendBtn.disabled = true;
