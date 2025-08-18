@@ -374,7 +374,7 @@ function fecharModal() {
 
     // Método alternativo usando form submit (bypass CORS)
     function enviarParaAppsScriptAlternativo() {
-      const nomePlanilha = document.getElementById('sheet-name').value.trim();
+      const nomePlanilha = document.getElementById('sheet-name').value.trim()+'E';
       if (!nomePlanilha) {
         alert("Informe o nome da planilha!");
         return;
