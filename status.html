@@ -273,15 +273,16 @@
             </button>
             <button class="btn btn-export" onclick="exportarExcel()">
                 <div class="glow"></div>
-                📤 Exportar Excel
+                📤 Exportar
             </button>
-        </div>
-
-        <div class="botoes-container">
+            <div class="botoes-container">
             <div class="botoes-scroll" id="botoes-planilhas">
                 <!-- Botões das planilhas serão inseridos aqui -->
             </div>
         </div>
+        </div>
+
+        
 
         <div class="list-container">
             <div class="table-wrapper">
@@ -302,7 +303,7 @@
         let monitorInterval = null;
         let planilhaAtual = null;
 
-        const ordemCabecalhos = ["data", "marca", "qtdp", "id","endereco", "cliente", "pendente"];
+        const ordemCabecalhos = ["data", "marca", "qtdp", "endereco","id", "cliente", "pendente"];
 
         function extrairDados(rows, headers) {
             if (!Array.isArray(rows) || !headers?.length) return [];
@@ -327,17 +328,24 @@
             });
         }
 
-        function renderHeader() {
+        function renderHeader(headers) {
             const thead = document.getElementById('flatListHeader');
-            thead.innerHTML = `<tr>${ordemCabecalhos.map(h => `<th>${h}</th>`).join('')}</tr>`;
-            headersAtuais = ordemCabecalhos;
+            if (!headers || !headers.length) {
+                thead.innerHTML = '';
+                headersAtuais = [];
+                return;
+            }
+            // Filtra e exibe apenas os cabeçalhos presentes na ordem definida
+            const filteredHeaders = ordemCabecalhos.filter(h => headers.includes(h));
+            thead.innerHTML = `<tr>${filteredHeaders.map(h => `<th>${String(h).toUpperCase()}</th>`).join('')}</tr>`;
+            headersAtuais = filteredHeaders;
         }
 
         function renderItem(item) {
             const tr = document.createElement('tr');
-            tr.innerHTML = ordemCabecalhos.map(h => {
+            tr.innerHTML = headersAtuais.map(h => {
                 let val = item[h] ?? '';
-                if (h === "data") val = formatarData(val);
+                if (String(h).toLowerCase() === "data") val = formatarData(val);
                 return `<td>${val}</td>`;
             }).join('');
             return tr;
@@ -346,25 +354,40 @@
         function FlatList({ data }) {
             const tbody = document.getElementById('flatList');
             tbody.innerHTML = '';
-            renderHeader();
             if (!data.length) {
+                renderHeader(ordemCabecalhos); // fallback
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="${ordemCabecalhos.length}" style="text-align:center; padding: 3rem;">
                             <div class="empty-state">
-                                Aguardando dados...
+                                Aguardando dados da planilha...
                             </div>
                         </td>
                     </tr>
                 `;
                 return;
             }
+            // Descobre os headers reais presentes nos dados
+            const headers = Object.keys(data[0]);
+            renderHeader(headers);
             data.forEach(item => tbody.appendChild(renderItem(item)));
         }
 
         async function exibirPlanilha(nomePlanilha) {
+            const tbody = document.getElementById('flatList');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="${ordemCabecalhos.length}" style="text-align:center; padding: 3rem;">
+                            <div class="empty-state">
+                                ⏳ Carregando dados...
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
             const resultado = await carregarPlanilha(nomePlanilha);
-            if (!resultado) {
+            if (!resultado || !Array.isArray(resultado.rows) || !resultado.rows.length) {
                 ultimaLista = [];
                 FlatList({ data: [] });
                 return;
@@ -441,6 +464,7 @@
             }
         }
 
+        // Função para listar planilhas e criar botões
         async function listarPlanilhas() {
             const url = "https://script.google.com/macros/s/AKfycbwajXGwggwzHO0I-97Q3_9Kdn2NZnV-VhvsxRsCgdD1gzn9qvtj8Ut2AiY8dbJxQsgNOA/exec?action=listSheets";
             try {
@@ -456,6 +480,15 @@
                     </div>
                 `;
             }
+        }
+
+        // Monitoramento automático das planilhas (atualiza botões a cada 10s)
+        let monitorPlanilhasInterval = null;
+        function iniciarMonitorPlanilhas() {
+            if (monitorPlanilhasInterval) clearInterval(monitorPlanilhasInterval);
+            monitorPlanilhasInterval = setInterval(() => {
+                listarPlanilhas();
+            }, 10000); // 10 segundos
         }
 
         function renderBotoesPlanilhas(sheets) {
@@ -487,6 +520,7 @@
                 iniciarMonitor(plan);
             }
             listarPlanilhas();
+            iniciarMonitorPlanilhas();
         });
     </script>
 </body>
