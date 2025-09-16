@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Análise de Expedição - Sistema Profissional</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #2c3e50;
+      --secondary-color: #3498db;
+      --success-color: #27ae60;
+      --warning-color: #f39c12;
+      --danger-color: #e74c3c;
+      --info-color: #17a2b8;
+      --light-bg: #f8f9fa;
+      --dark-text: #2c3e50;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --border-radius: 8px;
+      --transition: all 0.3s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: var(--dark-text);
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--success-color), var(--secondary-color), var(--warning-color));
+    }
+
+    h1 {
+      color: var(--primary-color);
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.5rem;
+      font-weight: 700;
+      position: relative;
+    }
+
+    h1::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 3px;
+      background: var(--secondary-color);
+      border-radius: 2px;
+    }
+
+    h2, h3 {
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .controls {
+      background: var(--light-bg);
+      padding: 25px;
+      border-radius: var(--border-radius);
+      margin-bottom: 30px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      border: 1px solid #e9ecef;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+    }
+
+    .control-group label {
+      font-weight: 600;
+      color: var(--primary-color);
+      min-width: 60px;
+    }
+
+    .control-group input {
+      padding: 12px 16px;
+      border: 2px solid #e9ecef;
+      border-radius: var(--border-radius);
+      font-size: 1rem;
+      outline: none;
+      transition: var(--transition);
+      min-width: 200px;
+    }
+
+    .control-group input:focus {
+      border-color: var(--secondary-color);
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+
+    .btn {
+      background: var(--secondary-color);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .btn:hover {
+      background: #2980b9;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+
+    .btn:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn:disabled:hover {
+      transform: none;
+    }
+
+    .loading {
+      text-align: center;
+      font-size: 1.2em;
+      color: var(--secondary-color);
+      margin: 40px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .loading i {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin: 30px 0;
+    }
+
+    .metric {
+      background: white;
+      padding: 25px;
+      border-radius: var(--border-radius);
+      text-align: center;
+      box-shadow: var(--shadow);
+      border: 1px solid #e9ecef;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--secondary-color);
+    }
+
+    .metric:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+
+    .metric h3 {
+      margin: 0 0 15px 0;
+      font-size: 0.9rem;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    .metric p {
+      margin: 0;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+
+    .metric .icon {
+      font-size: 2rem;
+      color: var(--secondary-color);
+      margin-bottom: 10px;
+    }
+
+    .chart-container {
+      margin: 40px 0;
+      height: 450px;
+      background: white;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      border: 1px solid #e9ecef;
+    }
+
+    .info-panel {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      margin: 20px 0;
+      box-shadow: var(--shadow);
+    }
+
+    .info-panel strong {
+      font-weight: 600;
+    }
+
+    .explanation {
+      background: #f8f9fa;
+      padding: 25px;
+      border-left: 4px solid var(--info-color);
+      border-radius: var(--border-radius);
+      margin: 30px 0;
+      border: 1px solid #e9ecef;
+    }
+
+    .explanation h2 {
+      color: var(--info-color);
+      margin-top: 0;
+      font-size: 1.2rem;
+    }
+
+    .explanation ul {
+      line-height: 1.8;
+      font-size: 1rem;
+    }
+
+    .explanation li {
+      margin-bottom: 8px;
+    }
+
+    .interval-warning {
+      background: #fff3cd;
+      color: #856404;
+      padding: 15px;
+      border-radius: var(--border-radius);
+      border: 1px solid #ffeaa7;
+      margin: 15px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .suggestions {
+      background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+      color: white;
+      padding: 25px;
+      border-radius: var(--border-radius);
+      margin-top: 30px;
+      box-shadow: var(--shadow);
+    }
+
+    .suggestions h2 {
+      margin-top: 0;
+      color: white;
+      font-size: 1.4rem;
+    }
+
+    .suggestions ul {
+      line-height: 1.8;
+      font-size: 1rem;
+    }
+
+    .suggestions li {
+      margin-bottom: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .suggestions li:last-child {
+      border-bottom: none;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      background: white;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      border: 1px solid #e9ecef;
+    }
+
+    table th, table td {
+      padding: 15px 12px;
+      text-align: left;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    table th {
+      background: var(--light-bg);
+      font-weight: 600;
+      color: var(--primary-color);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    table tbody tr {
+      transition: var(--transition);
+    }
+
+    table tbody tr:hover {
+      background: #f8f9fa;
+    }
+
+    .highlight {
+      background-color: #fff3cd !important;
+      border-left: 4px solid var(--warning-color) !important;
+    }
+
+    .interval-item {
+      background-color: #e8f4fd !important;
+      border-left: 4px solid var(--info-color) !important;
+    }
+
+    .alert {
+      padding: 15px 20px;
+      border-radius: var(--border-radius);
+      margin: 20px 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 500;
+    }
+
+    .alert-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      border: 1px solid #e9ecef;
+      text-align: center;
+    }
+
+    .stat-card .value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin: 10px 0;
+    }
+
+    .stat-card .label {
+      color: #6c757d;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        margin: 10px;
+        padding: 20px;
+      }
+      
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .control-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .control-group input {
+        min-width: auto;
+      }
+      
+      h1 {
+        font-size: 1.8rem;
+      }
+      
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+      
+      .chart-container {
+        height: 300px;
+        padding: 15px;
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1><i class="fas fa-chart-line"></i> Análise de Expedição</h1>
+    
+    <!-- Controles -->
+    <div class="controls">
+      <div class="control-group">
+        <label for="planInput"><i class="fas fa-clipboard-list"></i> Plano:</label>
+        <input type="text" id="planInput" value="op31E" placeholder="Digite o plano (ex: op31E)">
+      </div>
+      <button class="btn" id="carregarBtn" onclick="carregarDados()">
+        <i class="fas fa-search"></i>
+        Carregar Análise
+      </button>
+    </div>
+
+    <div id="planInfo" class="info-panel" style="display: none;">
+      <p><strong><i class="fas fa-info-circle"></i> Plano Atual:</strong> <span id="planAtual"></span></p>
+      <p><strong><i class="fas fa-clock"></i> Turno:</strong> 17:40 às 02:57 | <strong><i class="fas fa-coffee"></i> Intervalo:</strong> 22:00—23:00 | <strong><i class="fas fa-truck"></i> Endereço = Lastro da carreta</strong></p>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">
+      <i class="fas fa-spinner"></i>
+      Carregando dados da expedição...
+    </div>
+    
+    <div id="error" class="alert alert-error" style="display: none;">
+      <i class="fas fa-exclamation-triangle"></i>
+      <span></span>
+    </div>
+
+    <div id="content" style="display: none;" class="fade-in">
+      <!-- Estatísticas de Intervalo -->
+      <div id="intervalStats" style="display: none;" class="interval-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="intervalStatsText"></span>
+      </div>
+
+      <!-- Métricas -->
+      <div class="metrics">
+        <div class="metric">
+          <div class="icon"><i class="fas fa-boxes"></i></div>
+          <h3>Total de Itens</h3>
+          <p id="totalItens">-</p>
+        </div>
+        <div class="metric">
+          <div class="icon"><i class="fas fa-tachometer-alt"></i></div>
+          <h3>Produtividade/Hora</h3>
+          <p id="produtividadeHora">-</p>
+        </div>
+        <div class="metric">
+          <div class="icon"><i class="fas fa-stopwatch"></i></div>
+          <h3>Tempo Médio/Item</h3>
+          <p id="tempoMedio">-</p>
+        </div>
+        <div class="metric">
+          <div class="icon"><i class="fas fa-truck"></i></div>
+          <h3>Lastros Utilizados</h3>
+          <p id="lastros">-</p>
+        </div>
+      </div>
+
+      <!-- Estatísticas Detalhadas -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="label">Itens no Turno</div>
+          <div class="value" id="itensTurno">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Itens no Intervalo</div>
+          <div class="value" id="itensIntervalo">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Duração Efetiva</div>
+          <div class="value" id="duracaoEfetiva">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Eficiência</div>
+          <div class="value" id="eficiencia">-</div>
+        </div>
+      </div>
+
+      <!-- Explicação das métricas -->
+      <div class="explanation">
+        <h2><i class="fas fa-info-circle"></i> Como são calculadas as métricas:</h2>
+        <ul>
+          <li><strong>Total de Itens:</strong> Quantidade total de registros processados no plano selecionado, incluindo itens processados durante o intervalo (22:00—23:00), quando existirem.</li>
+          <li><strong>Produtividade/Hora:</strong> Total de itens dividido pelo tempo total (em horas) entre o primeiro e o último item processado, considerando todos os itens.</li>
+          <li><strong>Tempo Médio/Item:</strong> Tempo total (em segundos) entre o primeiro e o último item, dividido pelo número de intervalos entre itens (total de itens - 1).</li>
+          <li><strong>Eficiência:</strong> Percentual de tempo efetivamente utilizado para processamento, excluindo pausas longas (> 5 min).</li>
+        </ul>
+        <div style="font-size:0.95em; color:#6c757d; margin-top:15px; padding-top:15px; border-top:1px solid #e9ecef;">
+          <i class="fas fa-lightbulb"></i> <strong>Nota:</strong> Itens processados durante o intervalo (22:00—23:00) são identificados e incluídos separadamente nas métricas e análises.
+        </div>
+      </div>
+
+      <!-- Gráfico por hora -->
+      <h2><i class="fas fa-chart-bar"></i> Produtividade por Hora</h2>
+      <div class="chart-container">
+        <canvas id="chartPorHora"></canvas>
+      </div>
+
+      <!-- Gráfico por lastro -->
+      <h2><i class="fas fa-chart-pie"></i> Distribuição por Lastro</h2>
+      <div class="chart-container">
+        <canvas id="chartPorLastro"></canvas>
+      </div>
+
+      <!-- Tabela de lacunas grandes -->
+      <h2><i class="fas fa-exclamation-triangle"></i> Lacunas Longas (> 5 min)</h2>
+      <table id="tabelaLacunas">
+        <thead>
+          <tr>
+            <th><i class="fas fa-clock"></i> Hora</th>
+            <th><i class="fas fa-box"></i> Último Item</th>
+            <th><i class="fas fa-box"></i> Próximo Item</th>
+            <th><i class="fas fa-hourglass-half"></i> Duração</th>
+            <th><i class="fas fa-map-marker-alt"></i> Lastro Anterior</th>
+            <th><i class="fas fa-map-marker-alt"></i> Lastro Próximo</th>
+            <th><i class="fas fa-info"></i> Observações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <!-- Itens agrupados -->
+      <h2><i class="fas fa-layer-group"></i> Grupos de Itens (Transportados Juntos)</h2>
+      <table id="tabelaGrupos">
+        <thead>
+          <tr>
+            <th><i class="fas fa-tags"></i> Grupo</th>
+            <th><i class="fas fa-boxes"></i> Itens</th>
+            <th><i class="fas fa-clock"></i> Intervalo Médio</th>
+            <th><i class="fas fa-truck"></i> Lastro</th>
+            <th><i class="fas fa-chart-line"></i> Eficiência</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <!-- Sugestões -->
+      <div class="suggestions">
+        <h2><i class="fas fa-lightbulb"></i> Sugestões de Melhoria</h2>
+        <ul id="sugestoesList"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const baseUrl = 'https://script.google.com/macros/s/AKfycbwajXGwggwzHO0I-97Q3_9Kdn2NZnV-VhvsxRsCgdD1gzn9qvtj8Ut2AiY8dbJxQsgNOA/exec';
+    
+    // Elementos DOM
+    const elements = {
+      loading: document.getElementById('loading'),
+      content: document.getElementById('content'),
+      error: document.getElementById('error'),
+      planInfo: document.getElementById('planInfo'),
+      planAtual: document.getElementById('planAtual'),
+      planInput: document.getElementById('planInput'),
+      carregarBtn: document.getElementById('carregarBtn'),
+      intervalStats: document.getElementById('intervalStats'),
+      intervalStatsText: document.getElementById('intervalStatsText')
+    };
+
+    // Charts globais
+    let chartPorHora = null;
+    let chartPorLastro = null;
+
+    // Configurações de turno
+    const TURNO = {
+      inicio: { hora: 17, minuto: 40 }, // 17:40
+      fim: { hora: 2, minuto: 57 },     // 02:57
+      intervalo: {
+        inicio: { hora: 22, minuto: 0 }, // 22:00
+        fim: { hora: 23, minuto: 0 }     // 23:00
+      }
+    };
+
+    // Funções utilitárias
+    function parseDate(isoString) {
+      return new Date(isoString);
+    }
+
+    function formatarTempo(segundos) {
+      const horas = Math.floor(segundos / 3600);
+      const mins = Math.floor((segundos % 3600) / 60);
+      const secs = Math.floor(segundos % 60);
+      
+      if (horas > 0) {
+        return `${horas}h ${mins}m ${secs}s`;
+      }
+      return `${mins}m ${secs}s`;
+    }
+
+    function formatarHora(date) {
+      return date.getHours().toString().padStart(2, '0') + ':' + 
+             date.getMinutes().toString().padStart(2, '0');
+    }
+
+    function formatarData(date) {
+      return date.toLocaleDateString('pt-BR') + ' ' + formatarHora(date);
+    }
+
+    // Verifica se está no intervalo de trabalho
+    function dentroDoTurno(date) {
+      const h = date.getHours();
+      const m = date.getMinutes();
+      const minutos = h * 60 + m;
+
+      const inicioTurno = TURNO.inicio.hora * 60 + TURNO.inicio.minuto;
+      const fimTurno = TURNO.fim.hora * 60 + TURNO.fim.minuto + 24 * 60; // próximo dia
+      const minutosAbs = (h < 3) ? minutos + 24 * 60 : minutos;
+
+      return minutosAbs >= inicioTurno && minutosAbs <= fimTurno;
+    }
+
+    // Verifica se está no intervalo de descanso
+    function noIntervalo(date) {
+      const h = date.getHours();
+      const m = date.getMinutes();
+      const minutos = h * 60 + m;
+      
+      const inicioIntervalo = TURNO.intervalo.inicio.hora * 60 + TURNO.intervalo.inicio.minuto;
+      const fimIntervalo = TURNO.intervalo.fim.hora * 60 + TURNO.intervalo.fim.minuto;
+      
+      return minutos >= inicioIntervalo && minutos < fimIntervalo;
+    }
+
+    function mostrarError(mensagem) {
+      elements.error.querySelector('span').textContent = mensagem;
+      elements.error.style.display = 'flex';
+      elements.loading.style.display = 'none';
+      elements.content.style.display = 'none';
+    }
+
+    function limparTabelas() {
+      document.querySelector('#tabelaLacunas tbody').innerHTML = '';
+      document.querySelector('#tabelaGrupos tbody').innerHTML = '';
+    }
+
+    function destruirCharts() {
+      if (chartPorHora) {
+        chartPorHora.destroy();
+        chartPorHora = null;
+      }
+      if (chartPorLastro) {
+        chartPorLastro.destroy();
+        chartPorLastro = null;
+      }
+    }
+
+    // Análise principal dos dados
+    async function analisarDados(dados) {
+      let rows = dados.rows;
+      if (!rows || rows.length === 0) {
+        mostrarError("Nenhum dado encontrado para este plano.");
+        return;
+      }
+
+      limparTabelas();
+      destruirCharts();
+
+      // Processar e ordenar dados
+      const eventos = rows
+        .map(r => ({ ...r, data: parseDate(r.data) }))
+        .sort((a, b) => a.data - b.data);
+
+      if (eventos.length === 0) {
+        mostrarError("Nenhum evento válido encontrado para este plano.");
+        return;
+      }
+
+      // Separar eventos por tipo
+      const eventosTurno = eventos.filter(evt => dentroDoTurno(evt.data) && !noIntervalo(evt.data));
+      const eventosIntervalo = eventos.filter(evt => noIntervalo(evt.data));
+      const todosEventos = eventos.filter(evt => dentroDoTurno(evt.data));
+
+      // Estatísticas de intervalo
+      if (eventosIntervalo.length > 0) {
+        elements.intervalStats.style.display = 'flex';
+        elements.intervalStatsText.textContent = 
+          `Detectados ${eventosIntervalo.length} itens processados durante o intervalo (22:00-23:00). Estes itens são incluídos nas análises.`;
+      } else {
+        elements.intervalStats.style.display = 'none';
+      }
+
+      // Usar todos os eventos válidos para cálculos
+      const eventosParaCalculo = todosEventos;
+      
+      if (eventosParaCalculo.length === 0) {
+        mostrarError("Nenhum evento dentro do turno de trabalho para este plano.");
+        return;
+      }
+
+      const primeiro = eventosParaCalculo[0].data;
+      const ultimo = eventosParaCalculo[eventosParaCalculo.length - 1].data;
+      const duracaoTotalSeg = (ultimo - primeiro) / 1000;
+      const duracaoHoras = duracaoTotalSeg / 3600;
+
+      // Calcular tempo efetivo (excluindo pausas longas)
+      let tempoEfetivoSeg = 0;
+      let pausasLongas = 0;
+      
+      for (let i = 1; i < eventosParaCalculo.length; i++) {
+        const intervalo = (eventosParaCalculo[i].data - eventosParaCalculo[i-1].data) / 1000;
+        if (intervalo <= 300) { // <= 5 minutos
+          tempoEfetivoSeg += intervalo;
+        } else {
+          pausasLongas++;
+        }
+      }
+
+      const eficiencia = duracaoTotalSeg > 0 ? (tempoEfetivoSeg / duracaoTotalSeg) * 100 : 0;
+      const produtividadeHora = duracaoHoras > 0 ? eventosParaCalculo.length / duracaoHoras : 0;
+      const tempoMedioSeg = eventosParaCalculo.length > 1 ? duracaoTotalSeg / (eventosParaCalculo.length - 1) : 0;
+
+      // Análise por hora
+      const produtividadePorHora = Array(10).fill(0); // 17h às 02h
+      const itensIntervaloPorHora = Array(10).fill(0);
+      
+      eventosParaCalculo.forEach((evt, i) => {
+        if (i === 0) return; // Skip primeiro evento
+        
+        const h = evt.data.getHours();
+        const idx = h >= 17 ? h - 17 : h + 7; // 17→0, 18→1, ..., 02→9
+        
+        if (idx >= 0 && idx < 10) {
+          produtividadePorHora[idx]++;
+          if (noIntervalo(evt.data)) {
+            itensIntervaloPorHora[idx]++;
+          }
+        }
+      });
+
+      // Análise por lastro
+      const itensPorLastro = {};
+      eventosParaCalculo.forEach(evt => {
+        itensPorLastro[evt.endereco] = (itensPorLastro[evt.endereco] || 0) + 1;
+      });
+
+      // Análise de lacunas
+      const lacunas = [];
+      for (let i = 1; i < eventosParaCalculo.length; i++) {
+        const anterior = eventosParaCalculo[i - 1];
+        const atual = eventosParaCalculo[i];
+        const diffSeg = (atual.data - anterior.data) / 1000;
+
+        if (diffSeg > 300) { // > 5 minutos
+          const observacoes = [];
+          if (anterior.endereco !== atual.endereco) {
+            observacoes.push("Mudança de lastro");
+          }
+          if (noIntervalo(anterior.data) || noIntervalo(atual.data)) {
+            observacoes.push("Durante intervalo");
+          }
+          if (diffSeg > 1800) { // > 30 minutos
+            observacoes.push("Pausa muito longa");
+          }
+
+          lacunas.push({
+            hora: formatarHora(atual.data),
+            horaCompleta: formatarData(atual.data),
+            ultimo: anterior.marca,
+            proximo: atual.marca,
+            duracao: diffSeg,
+            enderecoAnt: anterior.endereco,
+            enderecoProx: atual.endereco,
+            observacoes: observacoes.join(", ") || "Pausa normal"
+          });
+        }
+      }
+
+      // Análise de grupos (itens transportados juntos)
+      const grupos = [];
+      let grupoAtual = [];
+      let grupoId = 1;
+
+      for (let i = 1; i < eventosParaCalculo.length; i++) {
+        const anterior = eventosParaCalculo[i - 1];
+        const atual = eventosParaCalculo[i];
+        const diffSeg = (atual.data - anterior.data) / 1000;
+
+        if (diffSeg < 30) { // < 30 segundos = mesmo transporte
+          if (grupoAtual.length === 0) {
+            grupoAtual = [anterior];
+          }
+          grupoAtual.push(atual);
+        } else {
+          if (grupoAtual.length > 1) {
+            const intervalos = [];
+            for (let j = 1; j < grupoAtual.length; j++) {
+              intervalos.push((grupoAtual[j].data - grupoAtual[j-1].data) / 1000);
+            }
+            const intervaloMedio = intervalos.reduce((a, b) => a + b, 0) / intervalos.length;
+            const eficienciaGrupo = grupoAtual.length / (intervalos.reduce((a, b) => a + b, 0) / grupoAtual.length) * 60;
+
+            grupos.push({
+              id: grupoId++,
+              itens: grupoAtual.map(g => g.marca).join(', '),
+              count: grupoAtual.length,
+              intervalo: intervaloMedio,
+              endereco: grupoAtual[0].endereco,
+              eficiencia: eficienciaGrupo,
+              tempoTotal: intervalos.reduce((a, b) => a + b, 0)
+            });
+          }
+          grupoAtual = [];
+        }
+      }
+
+      // Processar último grupo se existir
+      if (grupoAtual.length > 1) {
+        const intervalos = [];
+        for (let j = 1; j < grupoAtual.length; j++) {
+          intervalos.push((grupoAtual[j].data - grupoAtual[j-1].data) / 1000);
+        }
+        const intervaloMedio = intervalos.reduce((a, b) => a + b, 0) / intervalos.length;
+        const eficienciaGrupo = grupoAtual.length / (intervalos.reduce((a, b) => a + b, 0) / grupoAtual.length) * 60;
+
+        grupos.push({
+          id: grupoId,
+          itens: grupoAtual.map(g => g.marca).join(', '),
+          count: grupoAtual.length,
+          intervalo: intervaloMedio,
+          endereco: grupoAtual[0].endereco,
+          eficiencia: eficienciaGrupo,
+          tempoTotal: intervalos.reduce((a, b) => a + b, 0)
+        });
+      }
+
+      // Atualizar métricas principais
+      document.getElementById('totalItens').textContent = eventosParaCalculo.length;
+      document.getElementById('produtividadeHora').textContent = produtividadeHora.toFixed(1) + ' it/h';
+      document.getElementById('tempoMedio').textContent = formatarTempo(tempoMedioSeg);
+      document.getElementById('lastros').textContent = Object.keys(itensPorLastro).length;
+
+      // Atualizar estatísticas detalhadas
+      document.getElementById('itensTurno').textContent = eventosTurno.length;
+      document.getElementById('itensIntervalo').textContent = eventosIntervalo.length;
+      document.getElementById('duracaoEfetiva').textContent = formatarTempo(duracaoTotalSeg);
+      document.getElementById('eficiencia').textContent = eficiencia.toFixed(1) + '%';
+
+      // Criar gráfico por hora
+      const labelsHora = ['17h', '18h', '19h', '20h', '21h', '22h', '23h', '00h', '01h', '02h'];
+      const ctx1 = document.getElementById('chartPorHora').getContext('2d');
+      
+      chartPorHora = new Chart(ctx1, {
+        type: 'bar',
+        data: {
+          labels: labelsHora,
+          datasets: [
+            {
+              label: 'Itens do Turno',
+              data: produtividadePorHora.map((val, idx) => val - itensIntervaloPorHora[idx]),
+              backgroundColor: 'rgba(52, 152, 219, 0.8)',
+              borderColor: 'rgba(52, 152, 219, 1)',
+              borderWidth: 2
+            },
+            {
+              label: 'Itens do Intervalo',
+              data: itensIntervaloPorHora,
+              backgroundColor: 'rgba(241, 196, 15, 0.8)',
+              borderColor: 'rgba(241, 196, 15, 1)',
+              borderWidth: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Distribuição de Itens por Hora (Turno vs Intervalo)',
+              font: { size: 16, weight: 'bold' }
+            },
+            legend: {
+              position: 'top'
+            }
+          },
+          scales: {
+            x: {
+              stacked: true,
+              title: { display: true, text: 'Hora do Dia' }
+            },
+            y: {
+              stacked: true,
+              beginAtZero: true,
+              title: { display: true, text: 'Quantidade de Itens' }
+            }
+          }
+        }
+      });
+
+      // Criar gráfico por lastro
+      const ctx2 = document.getElementById('chartPorLastro').getContext('2d');
+      const cores = [
+        '#3498db', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c', 
+        '#34495e', '#e67e22', '#95a5a6', '#f1c40f', '#8e44ad'
+      ];
+
+      chartPorLastro = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(itensPorLastro).map(e => `Lastro ${e}`),
+          datasets: [{
+            data: Object.values(itensPorLastro),
+            backgroundColor: cores.slice(0, Object.keys(itensPorLastro).length),
+            borderWidth: 3,
+            borderColor: '#fff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Distribuição de Itens por Lastro',
+              font: { size: 16, weight: 'bold' }
+            },
+            legend: {
+              position: 'bottom'
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = ((context.parsed / total) * 100).toFixed(1);
+                  return `${context.label}: ${context.parsed} itens (${percentage}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Preencher tabela de lacunas
+      const tbodyLacunas = document.querySelector('#tabelaLacunas tbody');
+      if (lacunas.length === 0) {
+        tbodyLacunas.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#6c757d; font-style:italic;">Nenhuma lacuna longa detectada</td></tr>';
+      } else {
+        lacunas.forEach(l => {
+          const tr = document.createElement('tr');
+          
+          // Adicionar classes baseadas em observações
+          if (l.observacoes.includes('Durante intervalo')) {
+            tr.classList.add('interval-item');
+          } else if (l.observacoes.includes('Mudança de lastro')) {
+            tr.classList.add('highlight');
+          }
+
+          tr.innerHTML = `
+            <td title="${l.horaCompleta}">${l.hora}</td>
+            <td>${l.ultimo}</td>
+            <td>${l.proximo}</td>
+            <td>${formatarTempo(l.duracao)}</td>
+            <td>Lastro ${l.enderecoAnt}</td>
+            <td>Lastro ${l.enderecoProx}</td>
+            <td>${l.observacoes}</td>
+          `;
+          tbodyLacunas.appendChild(tr);
+        });
+      }
+
+      // Preencher tabela de grupos
+      const tbodyGrupos = document.querySelector('#tabelaGrupos tbody');
+      if (grupos.length === 0) {
+        tbodyGrupos.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#6c757d; font-style:italic;">Nenhum grupo de itens detectado</td></tr>';
+      } else {
+        grupos.forEach(g => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>Grupo ${g.id}</td>
+            <td title="${g.itens}">${g.count} itens</td>
+            <td>${g.intervalo.toFixed(1)}s</td>
+            <td>Lastro ${g.endereco}</td>
+            <td>${g.eficiencia.toFixed(1)} it/min</td>
+          `;
+          tbodyGrupos.appendChild(tr);
+        });
+      }
+
+      // Gerar sugestões inteligentes
+      const sugestoes = [];
+      
+      // Análise do lastro mais movimentado
+      const lastroMaisMovimentado = Object.entries(itensPorLastro)
+        .sort(([,a], [,b]) => b - a)[0];
+      sugestoes.push(`
+        <strong><i class="fas fa-trophy"></i> Lastro Prioritário:</strong> 
+        Lastro ${lastroMaisMovimentado[0]} processou ${lastroMaisMovimentado[1]} itens (${((lastroMaisMovimentado[1]/eventosParaCalculo.length)*100).toFixed(1)}%). 
+        Priorize a organização e acesso a este ponto.
+      `);
+
+      // Análise de eficiência
+      if (eficiencia >= 80) {
+        sugestoes.push(`
+          <strong><i class="fas fa-star"></i> Excelente Eficiência:</strong> 
+          ${eficiencia.toFixed(1)}% de aproveitamento do tempo. Operação muito bem otimizada.
+        `);
+      } else if (eficiencia >= 60) {
+        sugestoes.push(`
+          <strong><i class="fas fa-thumbs-up"></i> Boa Eficiência:</strong> 
+          ${eficiencia.toFixed(1)}% de aproveitamento. Há espaço para melhorias focando nas pausas longas.
+        `);
+      } else {
+        sugestoes.push(`
+          <strong><i class="fas fa-exclamation-triangle"></i> Eficiência Baixa:</strong> 
+          ${eficiencia.toFixed(1)}% de aproveitamento. ${pausasLongas} pausas longas detectadas. 
+          Revise processos e elimine gargalos.
+        `);
+      }
+
+      // Análise de produtividade
+      if (produtividadeHora >= 100) {
+        sugestoes.push(`
+          <strong><i class="fas fa-rocket"></i> Alta Produtividade:</strong> 
+          ${produtividadeHora.toFixed(1)} itens/hora é excepcional. Mantenha esse ritmo.
+        `);
+      } else if (produtividadeHora >= 50) {
+        sugestoes.push(`
+          <strong><i class="fas fa-chart-line"></i> Produtividade Moderada:</strong> 
+          ${produtividadeHora.toFixed(1)} itens/hora. Identifique gargalos para melhorar.
+        `);
+      } else {
+        sugestoes.push(`
+          <strong><i class="fas fa-slow-forward"></i> Produtividade Baixa:</strong> 
+          ${produtividadeHora.toFixed(1)} itens/hora precisa de atenção urgente. 
+          Revisar métodos e ferramentas.
+        `);
+      }
+
+      // Análise de lacunas
+      if (lacunas.length > 0) {
+        const lacunasComMudanca = lacunas.filter(l => l.enderecoAnt !== l.enderecoProx).length;
+        const lacunasIntervalo = lacunas.filter(l => l.observacoes.includes('Durante intervalo')).length;
+        
+        sugestoes.push(`
+          <strong><i class="fas fa-hourglass-half"></i> Análise de Pausas:</strong> 
+          ${lacunas.length} pausas longas detectadas. ${lacunasComMudanca} envolveram mudança de lastro 
+          e ${lacunasIntervalo} ocorreram durante o intervalo oficial.
+        `);
+
+        if (lacunasComMudanca > lacunas.length * 0.6) {
+          sugestoes.push(`
+            <strong><i class="fas fa-route"></i> Otimização de Rota:</strong> 
+            Maioria das pausas longas envolve mudança de lastro. 
+            Considere agrupar itens por localização para reduzir deslocamentos.
+          `);
+        }
+      }
+
+      // Análise de grupos
+      if (grupos.length > 0) {
+        const eficienciaMediaGrupos = grupos.reduce((sum, g) => sum + g.eficiencia, 0) / grupos.length;
+        sugestoes.push(`
+          <strong><i class="fas fa-users"></i> Transporte em Grupo:</strong> 
+          ${grupos.length} grupos identificados com eficiência média de ${eficienciaMediaGrupos.toFixed(1)} it/min. 
+          ${eficienciaMediaGrupos > 2 ? 'Excelente uso de carrinhos/empilhadeira.' : 'Considere usar equipamentos para transportar mais itens juntos.'}
+        `);
+      }
+
+      // Análise de horários de pico
+      const horarioPico = produtividadePorHora.indexOf(Math.max(...produtividadePorHora));
+      const labelPico = labelsHora[horarioPico];
+      sugestoes.push(`
+        <strong><i class="fas fa-clock"></i> Horário de Pico:</strong> 
+        ${labelPico} foi o horário mais produtivo com ${Math.max(...produtividadePorHora)} itens. 
+        Use esse padrão para otimizar a distribuição de tarefas.
+      `);
+
+      // Análise de itens no intervalo
+      if (eventosIntervalo.length > 0) {
+        const percentualIntervalo = (eventosIntervalo.length / eventosParaCalculo.length * 100).toFixed(1);
+        if (eventosIntervalo.length > 5) {
+          sugestoes.push(`
+            <strong><i class="fas fa-exclamation-circle"></i> Trabalho no Intervalo:</strong> 
+            ${eventosIntervalo.length} itens (${percentualIntervalo}%) processados durante intervalo oficial. 
+            Verifique se há sobrecarga de trabalho ou planejamento inadequado.
+          `);
+        } else {
+          sugestoes.push(`
+            <strong><i class="fas fa-info-circle"></i> Atividade no Intervalo:</strong> 
+            ${eventosIntervalo.length} itens processados no intervalo. 
+            Possivelmente finalização de tarefas em andamento - situação aceitável.
+          `);
+        }
+      }
+
+      // Atualizar lista de sugestões
+      document.getElementById('sugestoesList').innerHTML = 
+        sugestoes.map(s => `<li>${s}</li>`).join('');
+
+      // Mostrar conteúdo com animação
+      elements.loading.style.display = 'none';
+      elements.error.style.display = 'none';
+      elements.content.style.display = 'block';
+      elements.content.classList.add('fade-in');
+    }
+
+    // Função principal para carregar dados
+    async function carregarDados() {
+      const plan = elements.planInput.value.trim();
+      
+      if (!plan) {
+        mostrarError('Por favor, digite um plano válido.');
+        return;
+      }
+
+      // Limpar estado anterior
+      elements.intervalStats.style.display = 'none';
+      
+      // Atualizar interface
+      elements.planAtual.textContent = plan;
+      elements.planInfo.style.display = 'block';
+      elements.loading.style.display = 'flex';
+      elements.error.style.display = 'none';
+      elements.content.style.display = 'none';
+      elements.carregarBtn.disabled = true;
+      elements.carregarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
+
+      const url = `${baseUrl}?plan=${encodeURIComponent(plan)}`;
+      
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const dados = await response.json();
+        
+        if (dados.status !== 'success') {
+          throw new Error(dados.message || 'Erro desconhecido da API');
+        }
+        
+        if (!dados.rows || dados.rows.length === 0) {
+          throw new Error('Nenhum dado encontrado para este plano');
+        }
+        
+        await analisarDados(dados);
+        
+      } catch (error) {
+        console.error('Erro detalhado:', error);
+        
+        let mensagemErro = `Erro ao carregar dados do plano "${plan}": `;
+        
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+          mensagemErro += 'Problema de conexão. Verifique sua internet e tente novamente.';
+        } else if (error.message.includes('JSON')) {
+          mensagemErro += 'Resposta inválida do servidor. Tente novamente em alguns minutos.';
+        } else {
+          mensagemErro += error.message;
+        }
+        
+        mostrarError(mensagemErro);
+      } finally {
+        elements.carregarBtn.disabled = false;
+        elements.carregarBtn.innerHTML = '<i class="fas fa-search"></i> Carregar Análise';
+      }
+    }
+
+    // Event listeners
+    elements.planInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        carregarDados();
+      }
+    });
+
+    // Adicionar indicador visual para input
+    elements.planInput.addEventListener('input', function() {
+      const valor = this.value.trim();
+      if (valor.length > 0) {
+        this.style.borderColor = 'var(--success-color)';
+      } else {
+        this.style.borderColor = '#e9ecef';
+      }
+    });
+
+    // Função para exportar dados (funcionalidade extra)
+    function exportarRelatorio() {
+      // Esta função pode ser implementada para gerar relatórios em PDF/Excel
+      console.log('Exportar relatório - funcionalidade futura');
+    }
+
+    // Inicialização
+    console.log('Sistema de Análise de Expedição carregado com sucesso');
+    
+    // Opcional: carregar dados iniciais
+    // carregarDados();
+  </script>
+</body>
+</html>
