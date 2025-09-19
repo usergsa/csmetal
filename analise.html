@@ -743,13 +743,7 @@
       const todosEventos = eventos.filter(evt => dentroDoTurno(evt.data));
 
       // Estatísticas de intervalo
-      if (eventosIntervalo.length > 0) {
-        elements.intervalStats.style.display = 'flex';
-        elements.intervalStatsText.textContent = 
-          `Detectados ${eventosIntervalo.length} itens processados durante o intervalo (22:00-23:00). Estes itens são incluídos nas análises.`;
-      } else {
-        elements.intervalStats.style.display = 'none';
-      }
+      
 
       // Usar todos os eventos válidos para cálculos
       const eventosParaCalculo = todosEventos;
