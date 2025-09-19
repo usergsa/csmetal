@@ -464,6 +464,11 @@
   <div class="container">
     <h1><i class="fas fa-chart-line"></i> Análise de Expedição</h1>
     
+    <!-- Botões de planilhas -->
+    <div id="botoes-planilhas" style="margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 10px;">
+      <!-- Botões das planilhas serão inseridos aqui -->
+    </div>
+    
     <!-- Controles -->
     <div class="controls">
       <div class="control-group">
@@ -1228,32 +1233,72 @@
       }
     }
 
-    // Event listeners
-    elements.planInput.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        carregarDados();
+    // Função para listar planilhas e criar botões
+    async function listarPlanilhas() {
+      const url = "https://script.google.com/macros/s/AKfycbwajXGwggwzHO0I-97Q3_9Kdn2NZnV-VhvsxRsCgdD1gzn9qvtj8Ut2AiY8dbJxQsgNOA/exec?action=listSheets";
+      try {
+        const response = await fetch(url);
+        const json = await response.json();
+        if (json.status === "success" && Array.isArray(json.sheets)) {
+          renderBotoesPlanilhas(json.sheets);
+        }
+      } catch (e) {
+        document.getElementById("botoes-planilhas").innerHTML = `
+          <div style="text-align: center; color: #888; padding: 1rem;">
+            ⚠️ Erro ao carregar planilhas
+          </div>
+        `;
       }
-    });
+    }
 
-    // Adicionar indicador visual para input
-    elements.planInput.addEventListener('input', function() {
-      const valor = this.value.trim();
-      if (valor.length > 0) {
-        this.style.borderColor = 'var(--success-color)';
-      } else {
-        this.style.borderColor = '#e9ecef';
-      }
-    });
+    // Renderiza os botões das planilhas
+    function renderBotoesPlanilhas(sheets) {
+      const div = document.getElementById("botoes-planilhas");
+      div.innerHTML = "";
+      sheets.forEach(nome => {
+        const bt = document.createElement("button");
+        bt.className = "btn";
+        bt.style.background = "#e3eaf2";
+        bt.style.color = "#1976d2";
+        bt.style.border = "1.5px solid #bdbdbd";
+        bt.style.fontWeight = "500";
+        bt.style.padding = "8px 16px";
+        bt.style.borderRadius = "7px";
+        bt.style.fontSize = "15px";
+        bt.style.margin = "0";
+        bt.style.transition = "background 0.2s, border-color 0.2s";
+        bt.onmouseover = () => {
+          bt.style.background = "#1976d2";
+          bt.style.color = "#fff";
+          bt.style.borderColor = "#1976d2";
+        };
+        bt.onmouseout = () => {
+          bt.style.background = "#e3eaf2";
+          bt.style.color = "#1976d2";
+          bt.style.borderColor = "#bdbdbd";
+        };
+        bt.textContent = nome;
+        bt.onclick = () => {
+          elements.planInput.value = nome;
+          carregarDados();
+        };
+        div.appendChild(bt);
+      });
+    }
 
-    // Função para exportar dados (funcionalidade extra)
-    function exportarRelatorio() {
-      // Esta função pode ser implementada para gerar relatórios em PDF/Excel
-      console.log('Exportar relatório - funcionalidade futura');
+    // Monitoramento automático das planilhas (atualiza botões a cada 10s)
+    let monitorPlanilhasInterval = null;
+    function iniciarMonitorPlanilhas() {
+      if (monitorPlanilhasInterval) clearInterval(monitorPlanilhasInterval);
+      monitorPlanilhasInterval = setInterval(() => {
+        listarPlanilhas();
+      }, 10000); // 10 segundos
     }
 
     // Inicialização
     console.log('Sistema de Análise de Expedição carregado com sucesso');
+    listarPlanilhas();
+    iniciarMonitorPlanilhas();
     
     // Opcional: carregar dados iniciais
     // carregarDados();
