@@ -1,1 +1,1092 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Requisição de Materiais</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#1b1d21;
+  --surface:#232629;
+  --surface-2:#2a2e32;
+  --surface-3:#303439;
+  --border:#3a3e43;
+  --border-soft:#2f3236;
+  --text:#e9e7e1;
+  --text-dim:#9a9da3;
+  --text-dim2:#8a8d92;
+  --accent:#e8a13a;
+  --accent2:#5b9bd5;
+  --good:#7fae82;
+  --warn:#d4785a;
+  --bad:#c1554d;
+  --mono:'IBM Plex Mono', ui-monospace, monospace;
+  --sans:'IBM Plex Sans', system-ui, sans-serif;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f2f1ed; --surface:#ffffff; --surface-2:#f7f6f3; --surface-3:#efeee9; --border:#d8d6d0; --border-soft:#e5e3de;
+    --text:#232323; --text-dim:#5b5a56; --text-dim2:#79776f;
+    --accent:#b5720f; --accent2:#2f6fa8; --good:#3f7a45; --warn:#a8542f; --bad:#a13a33;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f2f1ed; --surface:#ffffff; --surface-2:#f7f6f3; --surface-3:#efeee9; --border:#d8d6d0; --border-soft:#e5e3de;
+  --text:#232323; --text-dim:#5b5a56; --text-dim2:#79776f;
+  --accent:#b5720f; --accent2:#2f6fa8; --good:#3f7a45; --warn:#a8542f; --bad:#a13a33;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
+::selection{background:var(--accent);color:#1b1d21;}
 
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px;}
+
+header.top{
+  display:flex; justify-content:space-between; align-items:flex-end; gap:24px;
+  padding-bottom:20px; margin-bottom:22px; border-bottom:1px solid var(--border);
+  flex-wrap:wrap;
+}
+.doc-id{font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--accent); margin-bottom:6px;}
+h1{font-size:22px; margin:0 0 4px; font-weight:600; letter-spacing:-0.01em;}
+.doc-meta{color:var(--text-dim2); font-size:12.5px; font-family:var(--mono);}
+
+.btn-importar{
+  display:flex; align-items:center; gap:8px;
+  padding:11px 18px;
+  background:var(--accent); color:#20211f; border:none; border-radius:8px;
+  font-family:var(--sans); font-size:14px; font-weight:600; cursor:pointer;
+  white-space:nowrap;
+}
+.btn-importar:hover{filter:brightness(1.06);}
+.btn-importar:active{filter:brightness(0.94);}
+
+/* ---- KPIs globais ---- */
+.kpis{
+  display:grid; grid-template-columns:repeat(5,1fr); gap:1px;
+  background:var(--border); border:1px solid var(--border); border-radius:10px; overflow:hidden;
+  margin-bottom:22px;
+}
+.kpi{background:var(--surface); padding:14px 16px;}
+.kpi .v{font-family:var(--mono); font-size:19px; font-weight:600; line-height:1.15;}
+.kpi .l{font-size:11.5px; color:var(--text-dim2); margin-top:4px;}
+.kpi .v.accent{color:var(--accent);}
+.kpi .v.bad{color:var(--bad);}
+.kpi .v.good{color:var(--good);}
+
+.controls{display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap;}
+.search-box{flex:1 1 280px; position:relative;}
+.search-box input{
+  width:100%; background:var(--surface); border:1px solid var(--border); color:var(--text);
+  padding:10px 14px 10px 36px; border-radius:8px; font-family:var(--sans); font-size:14px;
+}
+.search-box input:focus{outline:none; border-color:var(--accent);}
+.search-box svg{position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:.5;}
+.view-toggle{display:flex; background:var(--surface); border:1px solid var(--border); border-radius:8px; overflow:hidden;}
+.view-toggle button{
+  background:none; border:none; color:var(--text-dim); padding:9px 16px; font-family:var(--sans); font-size:13.5px;
+  cursor:pointer; font-weight:500;
+}
+.view-toggle button.active{background:var(--accent); color:#20211f;}
+
+.send-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:-2px 0 14px;}
+.send-row input{
+  background:var(--surface); border:1px solid var(--border); color:var(--text);
+  padding:9px 12px; border-radius:8px; font-family:var(--mono); font-size:12.5px; width:190px;
+}
+.send-row input:focus{outline:none; border-color:var(--accent2);}
+.btn-enviar{
+  background:var(--accent2); border:none; color:#0f1a22; padding:9px 16px; border-radius:8px;
+  font-family:var(--sans); font-size:13px; font-weight:600; cursor:pointer;
+}
+.btn-enviar:hover{filter:brightness(1.08);}
+.btn-enviar:disabled{opacity:.6; cursor:default;}
+.progress-bar{display:none; width:100%; height:3px; background:var(--surface-3); border-radius:2px; overflow:hidden; order:99;}
+.progress-fill{width:40%; height:100%; background:var(--accent2); animation:loadbar 1s infinite linear;}
+@keyframes loadbar{ 0%{transform:translateX(-100%);} 100%{transform:translateX(250%);} }
+.send-status{font-family:var(--mono); font-size:12px; color:var(--text-dim2);}
+.send-status.ok{color:var(--good);}
+.send-status.error{color:var(--bad);}
+
+.btn-objeto{
+  background:var(--surface); border:1px solid var(--accent2); color:var(--accent2);
+  padding:9px 14px; border-radius:8px; font-family:var(--mono); font-size:12.5px; font-weight:600; cursor:pointer;
+}
+.btn-objeto:hover{background:rgba(91,155,213,.1);}
+.json-panel{display:none; margin-bottom:14px;}
+.json-panel.show{display:block;}
+.json-toolbar{
+  display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
+  background:var(--surface-3); border:1px solid var(--border); border-bottom:none;
+  border-radius:8px 8px 0 0; padding:8px 12px; font-size:11.5px; color:var(--text-dim2); font-family:var(--mono);
+}
+.json-toolbar button{
+  background:var(--surface); border:1px solid var(--border); color:var(--text); border-radius:6px;
+  padding:5px 10px; font-family:var(--mono); font-size:11.5px; cursor:pointer; margin-left:6px;
+}
+.json-toolbar button:hover{border-color:var(--accent2); color:var(--accent2);}
+.json-panel pre{
+  margin:0; max-height:40vh; overflow:auto; background:#111318; color:#a9e0a9;
+  font-family:var(--mono); font-size:11.5px; padding:12px 14px; border-radius:0 0 8px 8px; border:1px solid var(--border);
+}
+
+.count-line{font-size:12.5px; color:var(--text-dim2); margin-bottom:10px; font-family:var(--mono);}
+mark{background:var(--accent); color:#20211f; border-radius:2px; padding:0 1px;}
+
+/* ---- Arquivo importado (nível 0, topo da lista recursiva) ---- */
+.file-card{background:var(--surface); border:1px solid var(--accent); border-left-width:3px; border-radius:10px; margin-bottom:12px; overflow:hidden;}
+.file-head{
+  display:grid; grid-template-columns:1.9fr .8fr .8fr .8fr .8fr 24px; gap:10px; align-items:center;
+  padding:15px 16px; cursor:pointer;
+}
+.file-head:hover{background:var(--surface-2);}
+.file-head .nome{font-weight:700; font-size:15.5px;}
+.file-head .sub{font-family:var(--mono); font-size:11px; color:var(--text-dim2); margin-top:3px;}
+.file-head .field{font-family:var(--mono); font-size:13px;}
+.file-head .field .l{font-size:10.5px; color:var(--text-dim2); font-family:var(--sans); margin-bottom:1px;}
+.file-card.open > .file-head .chevron{transform:rotate(90deg);}
+.file-body{display:none; border-top:1px solid var(--border-soft); background:var(--surface-2); padding:16px;}
+.file-card.open .file-body{display:block;}
+.file-remove{
+  background:none; border:1px solid var(--border); color:var(--text-dim2); border-radius:6px;
+  padding:3px 8px; font-size:11px; font-family:var(--mono); cursor:pointer; margin-left:8px;
+}
+.file-remove:hover{border-color:var(--bad); color:var(--bad);}
+
+.meta-grid{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px;
+  margin-bottom:14px; padding:12px 14px; background:var(--surface); border:1px solid var(--border-soft); border-radius:8px;
+}
+.meta-grid .item .l{font-size:10.5px; color:var(--text-dim2); margin-bottom:2px;}
+.meta-grid .item .v{font-family:var(--mono); font-size:13px; font-weight:600;}
+
+.file-kpis{display:grid; grid-template-columns:repeat(5,1fr); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:8px; overflow:hidden; margin-bottom:14px;}
+.file-kpis .kpi{padding:10px 12px;}
+.file-kpis .kpi .v{font-size:16px;}
+
+/* ---- Grupo composto (perfil principal com componentes) — reaproveita padrão profile-card ---- */
+.profile-card{background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; margin-bottom:10px; overflow:hidden;}
+.profile-head{
+  display:grid; grid-template-columns:1.7fr .9fr .9fr .9fr .8fr 24px; gap:10px; align-items:center;
+  padding:14px 16px; cursor:pointer;
+}
+.profile-head:hover{background:var(--surface-3);}
+.profile-head .perfil{font-weight:600; font-size:15px;}
+.profile-head .sub{font-family:var(--mono); font-size:11px; color:var(--text-dim2); margin-top:2px;}
+.profile-head .field{font-family:var(--mono); font-size:13px;}
+.profile-head .field .l{font-size:10.5px; color:var(--text-dim2); font-family:var(--sans); margin-bottom:1px;}
+.chevron{transition:transform .15s ease; opacity:.5; flex-shrink:0;}
+.profile-card.open > .profile-head .chevron{transform:rotate(90deg);}
+.profile-body{display:none; border-top:1px solid var(--border-soft); background:var(--surface-2); padding:10px;}
+.profile-card.open .profile-body{display:block;}
+
+/* ---- Grupo folha (mesmo perfil, lista de itens) — reaproveita padrão bar-card ---- */
+.bar-card{background:var(--surface); border:1px solid var(--border-soft); border-radius:8px; margin-bottom:6px; overflow:hidden;}
+.bar-head{
+  display:grid; grid-template-columns:1.5fr .8fr .8fr .8fr .7fr 20px; gap:8px; align-items:center;
+  padding:10px 14px; cursor:pointer;
+}
+.bar-head:hover{background:var(--surface-3);}
+.bar-head .rastr{font-family:var(--mono); font-size:12.5px; font-weight:600;}
+.bar-head .sub{font-family:var(--mono); font-size:10.5px; color:var(--text-dim2); margin-top:2px;}
+.bar-head .field{font-family:var(--mono); font-size:12px;}
+.bar-head .field .l{font-size:10px; color:var(--text-dim2); font-family:var(--sans); margin-bottom:1px;}
+.warn-pill{display:inline-block; font-family:var(--mono); font-size:11px; padding:2px 7px; border-radius:5px; font-weight:600; background:rgba(212,120,90,.15); color:var(--warn);}
+.ok-pill{display:inline-block; font-family:var(--mono); font-size:11px; padding:2px 7px; border-radius:5px; font-weight:600; background:rgba(127,174,130,.15); color:var(--good);}
+.bar-card.open .chevron{transform:rotate(90deg);}
+
+/* ---- Item (linha da planilha) ---- */
+.pieces{display:none; border-top:1px solid var(--border-soft);}
+.bar-card.open .pieces{display:block;}
+.piece-row{
+  display:grid; grid-template-columns:.6fr .9fr .9fr 1.4fr; gap:8px; align-items:center;
+  padding:8px 14px 8px 28px; font-family:var(--mono); font-size:12px; border-top:1px solid var(--border-soft);
+}
+.piece-row:first-child{border-top:none;}
+.piece-row.match{background:rgba(232,161,58,.1);}
+.piece-row .field .l{font-size:10px; color:var(--text-dim2); font-family:var(--sans); margin-bottom:1px;}
+.piece-row .obs{color:var(--text-dim2); font-size:11px;}
+
+/* flat items view */
+.piece-flat{
+  display:grid; grid-template-columns:1.4fr 1.2fr .6fr .8fr .8fr; gap:10px; align-items:center;
+  padding:11px 16px; background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; margin-bottom:6px;
+  font-family:var(--mono); font-size:12.5px;
+}
+.piece-flat .l{font-size:10px; color:var(--text-dim2); font-family:var(--sans); margin-bottom:2px;}
+.piece-flat .cnc{font-weight:600; color:var(--text); font-size:13.5px;}
+.piece-flat .trail{font-size:11px; color:var(--text-dim);}
+
+.col-head{display:grid; padding:0 16px 6px; font-size:10.5px; color:var(--text-dim2); font-family:var(--sans);}
+.col-head.flat{grid-template-columns:1.4fr 1.2fr .6fr .8fr .8fr;}
+
+.empty{text-align:center; padding:50px 20px; color:var(--text-dim2); font-size:14px;}
+.empty-inline{text-align:center; color:var(--text-dim2); padding:14px; font-style:italic; font-size:12.5px;}
+
+footer{
+  margin-top:30px; padding-top:16px; border-top:1px solid var(--border-soft);
+  font-size:11.5px; color:var(--text-dim2); font-family:var(--mono); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+}
+
+.debug-toggle{
+  margin-top:24px; font-size:11.5px; color:var(--text-dim2); font-family:var(--mono); cursor:pointer; user-select:none;
+}
+.debug-log{
+  display:none; margin-top:8px; max-height:22vh; overflow-y:auto;
+  background:#111; color:#7fe07f; font-family:var(--mono); font-size:11.5px;
+  padding:10px; border-radius:6px; white-space:pre-wrap; word-break:break-word;
+}
+.debug-log.show{display:block;}
+
+@media (max-width:820px){
+  .kpis{grid-template-columns:repeat(2,1fr);}
+  .file-kpis{grid-template-columns:repeat(2,1fr);}
+  .file-head, .profile-head, .bar-head{grid-template-columns:1fr; gap:4px; position:relative; padding-right:36px;}
+  .file-head .field, .profile-head .field, .bar-head .field{display:flex; justify-content:space-between;}
+  .file-head .field .l, .profile-head .field .l, .bar-head .field .l{margin-bottom:0;}
+  .chevron{position:absolute; right:14px; top:16px;}
+  .piece-row{grid-template-columns:1fr; gap:2px;}
+  .piece-row .field{display:flex; justify-content:space-between;}
+  .col-head{display:none;}
+  .piece-flat{grid-template-columns:1fr; gap:4px;}
+  .piece-flat .field{display:flex; justify-content:space-between;}
+  header.top{flex-direction:column; align-items:flex-start;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="doc-id" id="doc-codigo">RI-CS-110</div>
+      <h1>Requisição de Materiais</h1>
+      <div class="doc-meta" id="doc-sub">Nenhum arquivo importado ainda</div>
+    </div>
+    <button class="btn-importar" id="btn-importar" type="button">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 20h16"/></svg>
+      Importar planilha
+    </button>
+    <input type="file" id="input-excel" multiple accept=".xlsx,.xls" style="display:none">
+  </header>
+
+  <div class="kpis" id="kpis-globais"></div>
+
+  <div class="controls">
+    <div class="search-box">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search-global" type="text" placeholder="Buscar por perfil, componente, material ou observação em todos os arquivos...">
+    </div>
+  </div>
+
+  <div id="lista-arquivos"></div>
+  <div class="empty" id="empty-global" style="display:none;">Nenhum arquivo importado ainda. Clique em "Importar planilha" para começar.</div>
+
+  <footer>
+    <span id="footer-line">0 arquivo(s) importado(s)</span>
+    <span id="footer-line-2"></span>
+  </footer>
+
+  <div class="debug-toggle" id="debug-toggle">▸ log de importação</div>
+  <div class="debug-log" id="debug-log">Aguardando importação...</div>
+  <div onclick="enviarDados('MinhaAba', dadosExemplo)">Clique aqui</div>
+</div>
+
+<script>
+/* =========================================================
+   LOG
+   ========================================================= */
+function log(...args){
+  console.log("[requisicao]", ...args);
+  const panel = document.getElementById("debug-log");
+  if (panel) {
+    const line = args.map(a => typeof a === "object" ? JSON.stringify(a) : String(a)).join(" ");
+    panel.textContent += "\n" + line;
+    panel.scrollTop = panel.scrollHeight;
+  }
+}
+document.getElementById("debug-toggle").addEventListener("click", () => {
+  const panel = document.getElementById("debug-log");
+  const open = panel.classList.toggle("show");
+  document.getElementById("debug-toggle").textContent = (open ? "▾" : "▸") + " log de importação";
+});
+
+window.addEventListener("DOMContentLoaded", () => {
+  if (typeof XLSX === "undefined") {
+    log("ERRO: SheetJS (XLSX) não carregou. Verifique conexão/CDN.");
+  } else {
+    log("SheetJS carregado com sucesso. Versão:", XLSX.version);
+  }
+});
+
+/* =========================================================
+   FORMATADORES
+   ========================================================= */
+function fmtNum(n, dec){
+  if (n === null || n === undefined || isNaN(n)) return "—";
+  return n.toLocaleString("pt-BR", {minimumFractionDigits: dec ?? 0, maximumFractionDigits: dec ?? 2});
+}
+function fmtMm(n){
+  if (n === null || n === undefined || isNaN(n)) return "—";
+  return n.toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2}) + " mm";
+}
+function fmtData(v){
+  if (v === null || v === undefined || v === "") return "—";
+  if (v instanceof Date && !isNaN(v.getTime())) {
+    return v.toLocaleDateString("pt-BR");
+  }
+  return String(v);
+}
+function fmtDataHora(timestamp){
+  const data = new Date(timestamp);
+  if (isNaN(data.getTime())) return String(timestamp);
+  return data.toLocaleString("pt-BR", {day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+}
+
+/* =========================================================
+   PARSER DA PLANILHA DE REQUISIÇÃO
+   Transforma linhas cruas em uma ÁRVORE RECURSIVA:
+     arquivo -> blocos (perfil principal) -> [ filhos (componentes) ]* -> itens
+   Um bloco pode ter filhos (quando o bloco mistura mais de um
+   perfil consecutivo, ex: peça montada + barras usadas nela) ou
+   itens diretamente (quando é um grupo simples de um único perfil).
+   A renderização percorre essa árvore recursivamente, então
+   suporta qualquer profundidade adicional que uma planilha futura
+   venha a ter.
+   ========================================================= */
+
+function isBlankRow(row){
+  if (!row) return true;
+  return row.every(v => v === null || v === undefined || (typeof v === "string" && v.trim() === ""));
+}
+
+function toNumberOrNull(v){
+  if (v === null || v === undefined || v === "") return null;
+  const n = typeof v === "number" ? v : Number(String(v).replace(",", "."));
+  return isNaN(n) ? null : n;
+}
+
+function extrairMeta(rows){
+  const meta = { titulo: "REQUISIÇÃO DE MATERIAIS", codigo: "", liberacao:"", destino:"", padraoEmenda:"", tratamento:"", data:"" };
+  let headerRowIdx = -1;
+
+  for (let i = 0; i < rows.length; i++){
+    const row = rows[i] || [];
+    const rotulo = (row[0] || "").toString().trim().toUpperCase();
+
+    if (rotulo.startsWith("LIBERA")) meta.liberacao = row[1] ?? "";
+    else if (rotulo.startsWith("DESTINO")) meta.destino = row[1] ?? "";
+    else if (rotulo.startsWith("PADR")) meta.padraoEmenda = row[1] ?? "";
+    else if (rotulo.startsWith("TRATAMENTO")) {
+      meta.tratamento = row[1] ?? "";
+      for (let c = 2; c < row.length; c++){
+        const rot2 = (row[c] || "").toString().trim().toUpperCase();
+        if (rot2.startsWith("DATA")) meta.data = row[c+1] ?? "";
+      }
+    }
+    if (rotulo === "PERFIL") { headerRowIdx = i; break; }
+  }
+
+  const row0 = rows[0] || [];
+  const textos = row0.filter(v => typeof v === "string" && v.trim());
+  if (textos.length) meta.titulo = textos[0];
+  if (textos.length > 1) meta.codigo = textos[textos.length - 1];
+
+  return { meta, headerRowIdx };
+}
+
+function linhaParaItem(row){
+  const compTotalNum = toNumberOrNull(row[5]);
+  return {
+    perfil: (row[0] ?? "").toString().trim(),
+    material: (row[1] ?? "").toString().trim(),
+    qtd: toNumberOrNull(row[2]),
+    comprimento: toNumberOrNull(row[3]),
+    maquina: row[4] ?? null,
+    compTotal: compTotalNum,
+    compTotalTexto: (compTotalNum === null && row[5] != null && String(row[5]).trim() !== "") ? String(row[5]).trim() : null,
+    observacao: row[6] ?? null,
+  };
+}
+
+function agruparBloco(rows){
+  // Separa linhas de item de uma eventual linha de subtotal (só a coluna F preenchida)
+  let subtotal = null;
+  const itemRows = [];
+  rows.forEach(r => {
+    const soColunaF = (r[0]==null||r[0]==="") && (r[1]==null||r[1]==="") && (r[2]==null||r[2]==="") &&
+                       (r[3]==null||r[3]==="") && (r[4]==null||r[4]==="") && (r[6]==null||r[6]==="") &&
+                       (r[5] != null && r[5] !== "");
+    if (soColunaF) {
+      const n = toNumberOrNull(r[5]);
+      if (n !== null) subtotal = n;
+    } else if (!isBlankRow(r)) {
+      itemRows.push(linhaParaItem(r));
+    }
+  });
+  return { itemRows, subtotal };
+}
+
+function agruparPorPerfil(itens){
+  const grupos = [];
+  itens.forEach(it => {
+    const last = grupos[grupos.length - 1];
+    if (last && last.perfil === it.perfil && last.material === it.material) {
+      last.itens.push(it);
+    } else {
+      grupos.push({ perfil: it.perfil || "(sem perfil)", material: it.material, itens: [it] });
+    }
+  });
+  return grupos;
+}
+
+function construirArvore(dataRows){
+  const blocos = [];
+  let atual = [];
+  dataRows.forEach(row => {
+    if (isBlankRow(row)) {
+      if (atual.length) { blocos.push(atual); atual = []; }
+    } else {
+      atual.push(row);
+    }
+  });
+  if (atual.length) blocos.push(atual);
+
+  return blocos.map((blocoRows, idx) => {
+    const { itemRows, subtotal } = agruparBloco(blocoRows);
+    const subgrupos = agruparPorPerfil(itemRows);
+    if (!subgrupos.length) return null;
+
+    const node = {
+      id: "bloco-" + idx,
+      nome: subgrupos[0].perfil,
+      material: subgrupos[0].material,
+      subtotalDeclarado: subtotal,
+    };
+
+    if (subgrupos.length === 1) {
+      node.itens = subgrupos[0].itens;
+      node.filhos = null;
+    } else {
+      node.itens = null;
+      node.filhos = subgrupos.map((sg, i) => ({
+        id: node.id + "-f" + i,
+        nome: sg.perfil,
+        material: sg.material,
+        itens: sg.itens,
+        filhos: null,
+        subtotalDeclarado: null,
+      }));
+    }
+    return node;
+  }).filter(Boolean);
+}
+
+function agregarNode(node){
+  if (node.itens) {
+    let qtd = 0, comp = 0;
+    node.itens.forEach(it => {
+      qtd += it.qtd || 0;
+      if (it.compTotal !== null) comp += it.compTotal;
+      else if (it.qtd && it.comprimento) comp += it.qtd * it.comprimento;
+    });
+    return { qtd, comp, nItens: node.itens.length, nGrupos: 1 };
+  }
+  let qtd = 0, comp = 0, nItens = 0, nGrupos = 0;
+  (node.filhos || []).forEach(f => {
+    const a = agregarNode(f);
+    qtd += a.qtd; comp += a.comp; nItens += a.nItens; nGrupos += a.nGrupos;
+  });
+  return { qtd, comp, nItens, nGrupos: nGrupos + 1 };
+}
+
+function coletarItensFlat(node, caminho){
+  caminho = caminho || [];
+  // evita repetir o nome quando o subgrupo tem o mesmo nome do bloco pai (caso do "principal" dentro de um grupo composto)
+  const novoCaminho = (caminho.length && caminho[caminho.length - 1] === node.nome) ? caminho : caminho.concat([node.nome]);
+  if (node.itens) {
+    return node.itens.map(it => ({ ...it, trilha: novoCaminho.join(" › ") }));
+  }
+  let out = [];
+  (node.filhos || []).forEach(f => { out = out.concat(coletarItensFlat(f, novoCaminho)); });
+  return out;
+}
+
+/* =========================================================
+   OBJETO DE SAÍDA PARA A PRÓXIMA ETAPA
+   Junta as propriedades do cabeçalho da requisição (Liberação,
+   Destino, Padrão emenda, Data) com a lista de perfis já resolvida
+   até o último nível (item-folha), independente de quantos níveis
+   de componentes existiam na árvore original.
+   ========================================================= */
+function montarObjetoRequisicao(arquivo){
+  if (!arquivo || !arquivo.conteudo) return null;
+  const m = arquivo.conteudo.meta;
+
+  let perfis = [];
+  arquivo.conteudo.arvore.forEach(n => { perfis = perfis.concat(coletarItensFlat(n, [])); });
+
+  return {
+    arquivo: arquivo.nome,
+    liberacao: m.liberacao || null,
+    destino: m.destino || null,
+    padraoEmenda: m.padraoEmenda || null,
+    data: (m.data instanceof Date && !isNaN(m.data.getTime())) ? m.data.toISOString().slice(0, 10) : (m.data || null),
+    perfis: perfis.map(it => ({
+      perfil: it.perfil,
+      material: it.material || null,
+      qtd: it.qtd,
+      comprimento: it.comprimento,
+      compTotal: it.compTotal !== null ? it.compTotal : (it.qtd && it.comprimento ? it.qtd * it.comprimento : null),
+      maquina: it.maquina || (it.compTotalTexto || null),
+      observacao: it.observacao || null,
+      origem: it.trilha,
+    })),
+  };
+}
+window.montarObjetoRequisicao = montarObjetoRequisicao;
+
+/* =========================================================
+   IMPORTAÇÃO DE ARQUIVOS (com dedup por hash SHA-256)
+   ========================================================= */
+window.arquivosImportados = window.arquivosImportados || [];
+
+const inputExcel = document.getElementById("input-excel");
+const btnImportar = document.getElementById("btn-importar");
+
+btnImportar.addEventListener("click", () => {
+  log("Botão 'Importar' clicado. Abrindo seletor de arquivo...");
+  inputExcel.click();
+});
+
+inputExcel.addEventListener("change", (e) => importarArquivos(e));
+
+async function importarArquivos(e){
+  const files = Array.from(e.target.files);
+  if (!files.length) { log("Nenhum arquivo selecionado."); return; }
+
+  const arquivosImportados = window.arquivosImportados;
+  const novosArquivos = [];
+  const duplicados = [];
+
+  try {
+    for (const file of files) {
+      log(`Analisando arquivo: ${file.name}`);
+      const data = await file.arrayBuffer();
+
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+
+      const existente = arquivosImportados.find(a => a.hash === hash);
+      if (existente) {
+        log(`ARQUIVO JÁ IMPORTADO: ${file.name}`);
+        duplicados.push({ nome: file.name, hash, idExistente: existente.id });
+        continue;
+      }
+
+      let conteudo = null;
+      let erroLeitura = null;
+      try {
+        const wb = XLSX.read(data, { type: "array", cellDates: true });
+        const sheetName = wb.SheetNames[0];
+        const ws = wb.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null, blankrows: true });
+
+        const { meta, headerRowIdx } = extrairMeta(rows);
+        const dataRows = headerRowIdx >= 0 ? rows.slice(headerRowIdx + 1) : rows.slice(7);
+        const arvore = construirArvore(dataRows);
+
+        conteudo = { sheetName, meta, arvore };
+        log(`Planilha "${file.name}" processada: ${arvore.length} grupo(s) de nível superior na aba "${sheetName}".`);
+      } catch (parseErr) {
+        erroLeitura = parseErr.message;
+        log(`ERRO ao ler conteúdo da planilha ${file.name}: ${parseErr.message}`);
+      }
+
+      const arquivo = {
+        id: Date.now() + novosArquivos.length,
+        hash,
+        nome: file.name,
+        extensao: file.name.includes(".") ? file.name.split(".").pop().toLowerCase() : "",
+        tipo: file.type || "",
+        tamanho: file.size,
+        ultimaModificacao: file.lastModified,
+        importadoEm: Date.now(),
+        status: erroLeitura ? "erro" : "importado",
+        erro: erroLeitura,
+        conteudo,
+        aberto: false,
+      };
+
+      arquivosImportados.push(arquivo);
+      novosArquivos.push(arquivo);
+      log(`NOVO ARQUIVO: ${arquivo.nome} | ID: ${arquivo.id}`);
+    }
+
+    window.arquivosImportados = arquivosImportados;
+    log(`Importação concluída. Novos: ${novosArquivos.length} | Duplicados: ${duplicados.length}`);
+
+    renderizarTudo();
+
+    if (duplicados.length) {
+      alert(`${duplicados.length} arquivo(s) já haviam sido importados e foram ignorados.`);
+    }
+  } catch (error) {
+    console.error(error);
+    log("ERRO ao importar arquivos:", error.message);
+    alert("Falha ao importar arquivos: " + error.message);
+  } finally {
+    e.target.value = "";
+  }
+}
+
+function removerArquivo(id){
+  window.arquivosImportados = window.arquivosImportados.filter(a => a.id !== id);
+  renderizarTudo();
+}
+window.removerArquivo = removerArquivo;
+window.toggleEl = function(el){ el.classList.toggle("open"); };
+
+/* =========================================================
+   RENDERIZAÇÃO
+   ========================================================= */
+let queryGlobal = "";
+
+function highlight(text, q){
+  if (!q || text === null || text === undefined) return text ?? "";
+  const s = String(text);
+  const idx = s.toLowerCase().indexOf(q.toLowerCase());
+  if (idx === -1) return s;
+  return s.slice(0, idx) + "<mark>" + s.slice(idx, idx + q.length) + "</mark>" + s.slice(idx + q.length);
+}
+
+function nodeMatches(node, q){
+  if (!q) return true;
+  const ql = q.toLowerCase();
+  if ((node.nome || "").toLowerCase().includes(ql)) return true;
+  if ((node.material || "").toLowerCase().includes(ql)) return true;
+  if (node.itens) {
+    return node.itens.some(it => (it.observacao || "").toLowerCase().includes(ql) || (it.perfil||"").toLowerCase().includes(ql));
+  }
+  return (node.filhos || []).some(f => nodeMatches(f, q));
+}
+
+// Renderização RECURSIVA de um nó da árvore: se tiver filhos, desenha
+// como card de perfil principal (profile-card) e chama a si mesma para
+// cada filho; se for folha, desenha como card de grupo (bar-card) com
+// as linhas (itens) da planilha.
+function renderNode(node, q, depth){
+  const agg = agregarNode(node);
+  const autoOpen = !!q;
+
+  if (node.filhos && node.filhos.length) {
+    const filhosVisiveis = node.filhos.filter(f => !q || nodeMatches(f, q));
+    const filhosHtml = filhosVisiveis.map(f => renderNode(f, q, depth + 1)).join("");
+    const nComponentes = agg.nGrupos - 1;
+
+    return '<div class="profile-card' + (autoOpen ? ' open' : '') + '" data-node="' + node.id + '">' +
+      '<div class="profile-head" onclick="toggleEl(this.parentElement)">' +
+        '<div><div class="perfil">' + highlight(node.nome, q) + '</div>' +
+          '<div class="sub">' + (node.material ? node.material + " · " : "") + nComponentes + ' componente(s) · ' + agg.nItens + ' linha(s)</div></div>' +
+        '<div class="field"><span class="l">Qtd. total</span>' + fmtNum(agg.qtd) + '</div>' +
+        '<div class="field"><span class="l">Comp. total</span>' + fmtMm(agg.comp) + '</div>' +
+        '<div class="field"></div>' +
+        '<div class="field"></div>' +
+        '<svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>' +
+      '</div>' +
+      '<div class="profile-body">' + (filhosHtml || '<div class="empty-inline">Nenhum componente encontrado.</div>') + '</div>' +
+    '</div>';
+  }
+
+  // Nó folha: lista de itens (linhas da planilha) com o mesmo perfil
+  const itens = node.itens || [];
+  const itensVisiveis = q ? itens.filter(it =>
+      (it.observacao || "").toLowerCase().includes(q.toLowerCase()) || true // itens sempre mostrados quando o grupo casa
+    ) : itens;
+
+  const itensHtml = itens.map(it => {
+    const isMatch = q && (it.observacao || "").toLowerCase().includes(q.toLowerCase());
+    return '<div class="piece-row' + (isMatch ? ' match' : '') + '">' +
+      '<div class="field"><span class="l">Qtd</span>' + fmtNum(it.qtd) + '</div>' +
+      '<div class="field"><span class="l">Comp.</span>' + (it.comprimento != null ? fmtMm(it.comprimento) : '—') + '</div>' +
+      '<div class="field"><span class="l">Comp. total</span>' + (it.compTotal != null ? fmtMm(it.compTotal) : (it.compTotalTexto || '—')) + '</div>' +
+      '<div class="field"><span class="l">Observação / Máq.</span><span class="obs">' + (it.observacao || it.maquina || '—') + '</span></div>' +
+    '</div>';
+  }).join("");
+
+  let subtotalHtml = "";
+  if (node.subtotalDeclarado !== null && node.subtotalDeclarado !== undefined) {
+    const diff = Math.abs(node.subtotalDeclarado - agg.comp);
+    const pill = diff > 0.5 ? '<span class="warn-pill">Δ ' + fmtMm(diff) + '</span>' : '<span class="ok-pill">confere</span>';
+    subtotalHtml = ' <span style="font-family:var(--mono);font-size:10.5px;color:var(--text-dim2);">· subtotal informado: ' + fmtMm(node.subtotalDeclarado) + ' ' + pill + '</span>';
+  }
+
+  return '<div class="bar-card' + (autoOpen ? ' open' : '') + '" data-node="' + node.id + '">' +
+    '<div class="bar-head" onclick="toggleEl(this.parentElement)">' +
+      '<div><div class="rastr">' + highlight(node.nome, q) + '</div><div class="sub">' + (node.material || "") + subtotalHtml + '</div></div>' +
+      '<div class="field"><span class="l">Qtd. total</span>' + fmtNum(agg.qtd) + '</div>' +
+      '<div class="field"><span class="l">Comp. total</span>' + fmtMm(agg.comp) + '</div>' +
+      '<div class="field"><span class="l">Linhas</span>' + agg.nItens + '</div>' +
+      '<svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>' +
+    '</div>' +
+    '<div class="pieces">' + (itensHtml || '<div class="empty-inline">Sem itens.</div>') + '</div>' +
+  '</div>';
+}
+
+function renderArquivoBody(arquivo){
+  if (arquivo.status === "erro") {
+    return '<div class="empty-inline">Não foi possível ler o conteúdo desta planilha: ' + (arquivo.erro || "erro desconhecido") + '</div>';
+  }
+  const c = arquivo.conteudo;
+  if (!c) return '<div class="empty-inline">Sem conteúdo lido.</div>';
+
+  const m = c.meta;
+  const metaHtml =
+    '<div class="meta-grid">' +
+      '<div class="item"><div class="l">Liberação</div><div class="v">' + (m.liberacao || "—") + '</div></div>' +
+      '<div class="item"><div class="l">Destino</div><div class="v">' + (m.destino || "—") + '</div></div>' +
+      '<div class="item"><div class="l">Padrão emenda</div><div class="v">' + (m.padraoEmenda || "—") + '</div></div>' +
+      '<div class="item"><div class="l">Tratamento</div><div class="v">' + (m.tratamento || "—") + '</div></div>' +
+      '<div class="item"><div class="l">Data</div><div class="v">' + fmtData(m.data) + '</div></div>' +
+      '<div class="item"><div class="l">Documento</div><div class="v" style="white-space:pre-line;">' + (m.codigo || "—") + '</div></div>' +
+    '</div>';
+
+  const arvore = c.arvore;
+  const aggTotal = { qtd: 0, comp: 0, nItens: 0, nGrupos: 0 };
+  arvore.forEach(n => {
+    const a = agregarNode(n);
+    aggTotal.qtd += a.qtd; aggTotal.comp += a.comp; aggTotal.nItens += a.nItens; aggTotal.nGrupos += a.nGrupos;
+  });
+  const nComposto = arvore.filter(n => n.filhos).length;
+
+  const kpiHtml =
+    '<div class="file-kpis">' +
+      '<div class="kpi"><div class="v accent">' + arvore.length + '</div><div class="l">Grupos principais</div></div>' +
+      '<div class="kpi"><div class="v">' + nComposto + '</div><div class="l">Com componentes</div></div>' +
+      '<div class="kpi"><div class="v">' + aggTotal.nItens + '</div><div class="l">Linhas de item</div></div>' +
+      '<div class="kpi"><div class="v">' + fmtNum(aggTotal.qtd) + '</div><div class="l">Qtd. total</div></div>' +
+      '<div class="kpi"><div class="v accent">' + fmtMm(aggTotal.comp) + '</div><div class="l">Comprimento total</div></div>' +
+    '</div>';
+
+  const viewId = "view-" + arquivo.id;
+  const searchId = "search-" + arquivo.id;
+  const contentId = "content-" + arquivo.id;
+  const jsonId = "json-" + arquivo.id;
+
+  const controlsHtml =
+    '<div class="controls" style="margin-top:4px;">' +
+      '<div class="search-box">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+        '<input id="' + searchId + '" type="text" placeholder="Buscar por perfil, componente ou observação neste arquivo..." oninput="rerenderArquivo(' + arquivo.id + ')">' +
+      '</div>' +
+      '<div class="view-toggle">' +
+        '<button id="' + viewId + '-grupo" class="active" onclick="mudarViewArquivo(' + arquivo.id + ',\'grupo\')">Por grupo</button>' +
+        '<button id="' + viewId + '-flat" onclick="mudarViewArquivo(' + arquivo.id + ',\'flat\')">Todos os itens</button>' +
+      '</div>' +
+      '<button class="btn-objeto" onclick="toggleObjeto(' + arquivo.id + ')">{ } Gerar objeto</button>' +
+    '</div>' +
+    '<div class="send-row">' +
+      '<input id="sheet-name-' + arquivo.id + '" type="text" placeholder="Nome da planilha (ex: OP26)" value="' + (arquivo.conteudo && arquivo.conteudo.meta.liberacao ? arquivo.conteudo.meta.liberacao.replace(/[^A-Za-z0-9_]+/g,"") : "OP26") + '">' +
+      '<button id="send-btn-' + arquivo.id + '" class="btn-enviar" onclick="enviarParaAppsScript(' + arquivo.id + ')">Enviar para planilha</button>' +
+      '<div class="progress-bar" id="progress-' + arquivo.id + '"><div class="progress-fill"></div></div>' +
+      '<span class="send-status" id="send-status-' + arquivo.id + '"></span>' +
+    '</div>' +
+    '<div id="' + jsonId + '" class="json-panel"></div>' +
+    '<div id="' + contentId + '"></div>';
+
+  return metaHtml + kpiHtml + controlsHtml;
+}
+
+function garantirEstadoArquivo(arquivo){
+  arquivo._view = arquivo._view || "grupo";
+  arquivo._query = arquivo._query || "";
+}
+
+window.mudarViewArquivo = function(id, view){
+  const arquivo = window.arquivosImportados.find(a => a.id === id);
+  if (!arquivo) return;
+  garantirEstadoArquivo(arquivo);
+  arquivo._view = view;
+  document.getElementById("view-" + id + "-grupo").classList.toggle("active", view === "grupo");
+  document.getElementById("view-" + id + "-flat").classList.toggle("active", view === "flat");
+  renderConteudoArquivo(arquivo);
+};
+
+/* =========================================================
+   ENVIO PARA GOOGLE SHEETS (via Apps Script Web App)
+   Reaproveita o padrão: fetch POST com mode:'no-cors' e
+   Content-Type: text/plain (evita o preflight de CORS).
+   Como a resposta fica opaca em modo no-cors, não dá pra
+   confirmar o retorno do servidor — só que a requisição saiu.
+   ========================================================= */
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby3_IBNPYVnaHE691KCB3wUZ5Fmk77tb-IiMCn--hViwgTV9sLuG1AdXe2bTu47Qs0/exec";
+
+window.enviarParaAppsScript = function(id){
+  const arquivo = window.arquivosImportados.find(a => a.id === id);
+  if (!arquivo) return;
+
+  const obj = montarObjetoRequisicao(arquivo);
+  if (!obj) { alert("Não foi possível montar o objeto deste arquivo."); return; }
+
+  const nomeInput = document.getElementById("sheet-name-" + id);
+  const nomePlanilha = (nomeInput && nomeInput.value.trim()) || "OP26";
+
+  const btn = document.getElementById("send-btn-" + id);
+  const progress = document.getElementById("progress-" + id);
+  const status = document.getElementById("send-status-" + id);
+
+  btn.disabled = true;
+  btn.textContent = "Enviando...";
+  if (progress) progress.style.display = "block";
+  if (status) { status.textContent = ""; status.className = "send-status"; }
+
+  const url = APPS_SCRIPT_URL + "?nome=" + encodeURIComponent(nomePlanilha);
+
+  log(`Enviando objeto de "${arquivo.nome}" (${obj.perfis.length} perfil(is)) para a planilha "${nomePlanilha}"...`);
+
+  fetch(url, {
+    method: "POST",
+    mode: "no-cors", // evita erro de CORS; a resposta fica opaca (não dá pra ler o retorno)
+    body: JSON.stringify(obj),
+    headers: { "Content-Type": "text/plain" },
+  })
+    .then(() => {
+      log(`Requisição enviada para "${nomePlanilha}" (sem confirmação de retorno — modo no-cors).`);
+      if (status) { status.textContent = 'Enviado para "' + nomePlanilha + '".'; status.className = "send-status ok"; }
+    })
+    .catch(err => {
+      log("ERRO ao enviar para o Google Sheets: " + err.message);
+      if (status) { status.textContent = "Falha ao enviar: " + err.message; status.className = "send-status error"; }
+    })
+    .finally(() => {
+      btn.disabled = false;
+      btn.textContent = "Enviar para planilha";
+      if (progress) progress.style.display = "none";
+    });
+};
+
+async function enviarDados(nomeAba, dados) {
+  const url = 'https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycby3_IBNPYVnaHE691KCB3wUZ5Fmk77tb-IiMCn--hViwgTV9sLuG1AdXe2bTu47Qs0/exec';
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(dados)
+    });
+    
+    const resultado = await response.text();
+    console.log(resultado);
+    return resultado;
+    
+  } catch (error) {
+    console.error('Erro ao enviar dados:', error);
+    throw error;
+  }
+}
+
+// Exemplo de uso:
+const dadosExemplo = [
+  ['Nome', 'Email', 'Telefone'], // Cabeçalho
+  ['João', 'joao@email.com', '123456789'],
+  ['Maria', 'maria@email.com', '987654321']
+];
+
+
+window.toggleObjeto = function(id){
+  const arquivo = window.arquivosImportados.find(a => a.id === id);
+  const panel = document.getElementById("json-" + id);
+  if (!arquivo || !panel) return;
+
+  if (panel.classList.contains("show")) {
+    panel.classList.remove("show");
+    panel.innerHTML = "";
+    return;
+  }
+
+  const obj = montarObjetoRequisicao(arquivo);
+  const json = JSON.stringify(obj, null, 2);
+  window["_objetoRequisicao_" + id] = obj; // também acessível via console: window._objetoRequisicao_<id>
+
+  panel.innerHTML =
+    '<div class="json-toolbar">' +
+      '<span>' + (obj.perfis.length) + ' perfil(is) · propriedades: liberacao, destino, padraoEmenda, data, perfis[]</span>' +
+      '<div>' +
+        '<button onclick="copiarObjeto(' + id + ')">Copiar JSON</button>' +
+        '<button onclick="baixarObjeto(' + id + ')">Baixar .json</button>' +
+      '</div>' +
+    '</div>' +
+    '<pre>' + json.replace(/</g, "&lt;") + '</pre>';
+  panel.classList.add("show");
+  log("Objeto montado para " + arquivo.nome + ": " + obj.perfis.length + " perfil(is).");
+};
+
+window.copiarObjeto = function(id){
+  const obj = window["_objetoRequisicao_" + id];
+  if (!obj) return;
+  navigator.clipboard.writeText(JSON.stringify(obj, null, 2))
+    .then(() => log("JSON copiado para a área de transferência."))
+    .catch(err => log("Falha ao copiar: " + err.message));
+};
+
+window.baixarObjeto = function(id){
+  const arquivo = window.arquivosImportados.find(a => a.id === id);
+  const obj = window["_objetoRequisicao_" + id];
+  if (!obj) return;
+  const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = (arquivo.nome.replace(/\.[^.]+$/, "") || "requisicao") + ".json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+window.rerenderArquivo = function(id){
+  const arquivo = window.arquivosImportados.find(a => a.id === id);
+  if (!arquivo) return;
+  garantirEstadoArquivo(arquivo);
+  const input = document.getElementById("search-" + id);
+  arquivo._query = input ? input.value.trim() : "";
+  renderConteudoArquivo(arquivo);
+};
+
+function renderConteudoArquivo(arquivo){
+  const el = document.getElementById("content-" + arquivo.id);
+  if (!el || !arquivo.conteudo) return;
+  const q = arquivo._query || "";
+  const arvore = arquivo.conteudo.arvore;
+
+  if (arquivo._view === "flat") {
+    let flat = [];
+    arvore.forEach(n => { flat = flat.concat(coletarItensFlat(n, [])); });
+    if (q) {
+      const ql = q.toLowerCase();
+      flat = flat.filter(it => (it.trilha + " " + (it.observacao||"")).toLowerCase().includes(ql));
+    }
+    el.innerHTML =
+      '<div class="count-line">' + flat.length + ' item(ns) encontrado(s)</div>' +
+      '<div class="col-head flat"><span>Perfil</span><span>Origem</span><span>Qtd</span><span>Comp.</span><span>Comp. total</span></div>' +
+      (flat.length ? flat.map(it =>
+        '<div class="piece-flat">' +
+          '<div class="field"><span class="l">Perfil</span><span class="cnc">' + highlight(it.perfil, q) + '</span></div>' +
+          '<div class="field"><span class="l">Origem</span><span class="trail">' + highlight(it.trilha, q) + '</span></div>' +
+          '<div class="field"><span class="l">Qtd</span>' + fmtNum(it.qtd) + '</div>' +
+          '<div class="field"><span class="l">Comp.</span>' + (it.comprimento!=null?fmtMm(it.comprimento):'—') + '</div>' +
+          '<div class="field"><span class="l">Comp. total</span>' + (it.compTotal!=null?fmtMm(it.compTotal):(it.compTotalTexto||'—')) + '</div>' +
+        '</div>'
+      ).join("") : '<div class="empty-inline">Nenhum item encontrado.</div>');
+    return;
+  }
+
+  const visiveis = arvore.filter(n => !q || nodeMatches(n, q));
+  el.innerHTML =
+    '<div class="count-line">' + visiveis.length + ' grupo(s) principal(is) encontrado(s)</div>' +
+    (visiveis.length ? visiveis.map(n => renderNode(n, q, 0)).join("") : '<div class="empty-inline">Nenhum resultado para essa busca.</div>');
+}
+
+function renderizarListaArquivos(){
+  const container = document.getElementById("lista-arquivos");
+  const arquivos = window.arquivosImportados;
+  const q = queryGlobal;
+
+  const visiveis = arquivos.filter(a => {
+    if (!q) return true;
+    if (a.nome.toLowerCase().includes(q.toLowerCase())) return true;
+    if (a.conteudo && a.conteudo.arvore.some(n => nodeMatches(n, q))) return true;
+    return false;
+  });
+
+  document.getElementById("empty-global").style.display = arquivos.length ? "none" : "block";
+
+  container.innerHTML = visiveis.map(arquivo => {
+    garantirEstadoArquivo(arquivo);
+    if (q) arquivo._query = q;
+
+    let resumo = "Não foi possível ler esta planilha.";
+    let kpisResumo = "";
+    if (arquivo.conteudo) {
+      const arvore = arquivo.conteudo.arvore;
+      const agg = { qtd: 0, comp: 0, nItens: 0 };
+      arvore.forEach(n => { const a = agregarNode(n); agg.qtd += a.qtd; agg.comp += a.comp; agg.nItens += a.nItens; });
+      resumo = arvore.length + " grupo(s) · " + agg.nItens + " linha(s)";
+      kpisResumo =
+        '<div class="field"><span class="l">Grupos</span>' + arvore.length + '</div>' +
+        '<div class="field"><span class="l">Qtd. total</span>' + fmtNum(agg.qtd) + '</div>' +
+        '<div class="field"><span class="l">Comp. total</span>' + fmtMm(agg.comp) + '</div>';
+    } else {
+      kpisResumo = '<div class="field"></div><div class="field"></div><div class="field"></div>';
+    }
+
+    const autoOpen = arquivo.aberto || !!q;
+
+    return '<div class="file-card' + (autoOpen ? ' open' : '') + '" data-file="' + arquivo.id + '">' +
+      '<div class="file-head" onclick="toggleEl(this.parentElement)">' +
+        '<div><div class="nome">' + highlight(arquivo.nome, q) + '<button class="file-remove" onclick="event.stopPropagation(); removerArquivo(' + arquivo.id + ')">remover</button></div>' +
+          '<div class="sub">' + resumo + ' · importado em ' + fmtDataHora(arquivo.importadoEm) + '</div></div>' +
+        kpisResumo +
+        '<svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>' +
+      '</div>' +
+      '<div class="file-body">' + renderArquivoBody(arquivo) + '</div>' +
+    '</div>';
+  }).join("");
+
+  // popula o conteúdo (view por grupo/flat) de cada arquivo visível após inserir o HTML
+  visiveis.forEach(arquivo => {
+    if (arquivo.conteudo) renderConteudoArquivo(arquivo);
+  });
+}
+
+function renderizarKpisGlobais(){
+  const arquivos = window.arquivosImportados;
+  let totalGrupos = 0, totalItens = 0, totalQtd = 0, totalComp = 0;
+  arquivos.forEach(a => {
+    if (!a.conteudo) return;
+    a.conteudo.arvore.forEach(n => {
+      const agg = agregarNode(n);
+      totalGrupos += 1;
+      totalItens += agg.nItens;
+      totalQtd += agg.qtd;
+      totalComp += agg.comp;
+    });
+  });
+
+  const kpiData = [
+    { v: arquivos.length, l: "Arquivo(s) importado(s)" },
+    { v: totalGrupos, l: "Grupos principais" },
+    { v: totalItens, l: "Linhas de item" },
+    { v: fmtNum(totalQtd), l: "Qtd. total" },
+    { v: fmtMm(totalComp), l: "Comprimento total", cls: "accent" },
+  ];
+  document.getElementById("kpis-globais").innerHTML = kpiData.map(k =>
+    '<div class="kpi"><div class="v ' + (k.cls || "") + '">' + k.v + '</div><div class="l">' + k.l + '</div></div>'
+  ).join("");
+
+  document.getElementById("footer-line").textContent = arquivos.length + " arquivo(s) importado(s)";
+  document.getElementById("footer-line-2").textContent = totalGrupos + " grupos · " + totalItens + " linhas · " + fmtMm(totalComp);
+  document.getElementById("doc-sub").textContent = arquivos.length
+    ? arquivos.length + " arquivo(s) importado(s) · " + totalGrupos + " grupos · " + totalItens + " linhas"
+    : "Nenhum arquivo importado ainda";
+}
+
+function renderizarTudo(){
+  renderizarKpisGlobais();
+  renderizarListaArquivos();
+}
+
+document.getElementById("search-global").addEventListener("input", e => {
+  queryGlobal = e.target.value.trim();
+  renderizarListaArquivos();
+});
+
+renderizarTudo();
+</script>
+</body>
+</html>
