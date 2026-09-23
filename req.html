@@ -291,7 +291,6 @@ footer{
 
   <div class="debug-toggle" id="debug-toggle">▸ log de importação</div>
   <div class="debug-log" id="debug-log">Aguardando importação...</div>
-  <div onclick="enviarDados('MinhaAba', dadosExemplo)">Clique aqui</div>
 </div>
 
 <script>
@@ -822,7 +821,7 @@ window.mudarViewArquivo = function(id, view){
    Como a resposta fica opaca em modo no-cors, não dá pra
    confirmar o retorno do servidor — só que a requisição saiu.
    ========================================================= */
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby3_IBNPYVnaHE691KCB3wUZ5Fmk77tb-IiMCn--hViwgTV9sLuG1AdXe2bTu47Qs0/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4iY8UqmWupGTwnNNA-D2Wwuzu0qoqkSB_VGNhFvha-fC0Fk1DEcLdH3w3YT_1ZPBH/exec";
 
 window.enviarParaAppsScript = function(id){
   const arquivo = window.arquivosImportados.find(a => a.id === id);
@@ -844,13 +843,16 @@ window.enviarParaAppsScript = function(id){
   if (status) { status.textContent = ""; status.className = "send-status"; }
 
   const url = APPS_SCRIPT_URL + "?nome=" + encodeURIComponent(nomePlanilha);
+  const body = JSON.stringify(obj);
 
-  log(`Enviando objeto de "${arquivo.nome}" (${obj.perfis.length} perfil(is)) para a planilha "${nomePlanilha}"...`);
+  log(`Enviando objeto de "${arquivo.nome}" (${obj.perfis.length} perfil(is), ${body.length} bytes) para a planilha "${nomePlanilha}"...`);
+  log(`URL: ${url}`);
+  log(`Lembrete: com mode:'no-cors' o navegador NÃO deixa ler o status/resposta real. Confirme no DevTools > Network se a requisição está retornando 200 (e não um redirect 302 para login do Google).`);
 
   fetch(url, {
     method: "POST",
     mode: "no-cors", // evita erro de CORS; a resposta fica opaca (não dá pra ler o retorno)
-    body: JSON.stringify(obj),
+    body: body,
     headers: { "Content-Type": "text/plain" },
   })
     .then(() => {
@@ -867,36 +869,6 @@ window.enviarParaAppsScript = function(id){
       if (progress) progress.style.display = "none";
     });
 };
-
-async function enviarDados(nomeAba, dados) {
-  const url = 'https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycby3_IBNPYVnaHE691KCB3wUZ5Fmk77tb-IiMCn--hViwgTV9sLuG1AdXe2bTu47Qs0/exec';
-  
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(dados)
-    });
-    
-    const resultado = await response.text();
-    console.log(resultado);
-    return resultado;
-    
-  } catch (error) {
-    console.error('Erro ao enviar dados:', error);
-    throw error;
-  }
-}
-
-// Exemplo de uso:
-const dadosExemplo = [
-  ['Nome', 'Email', 'Telefone'], // Cabeçalho
-  ['João', 'joao@email.com', '123456789'],
-  ['Maria', 'maria@email.com', '987654321']
-];
-
 
 window.toggleObjeto = function(id){
   const arquivo = window.arquivosImportados.find(a => a.id === id);
